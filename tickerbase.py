@@ -19,7 +19,6 @@ from datetime import datetime
 # yfinance, curl_cffi and matplotlib were removed for the Cloudflare Workers
 # migration: none of them run on WebAssembly. Every section that used them is
 # fail-soft and simply renders "-" instead.
-
 import finnhub_client
 
 
@@ -138,6 +137,13 @@ PEER_METRICS = ["grossMargins", "operatingMargins", "profitMargins", "returnOnEq
                 "returnOnAssets", "trailingPE", "forwardPE", "priceToBook",
                 "priceToSalesTrailing12Months", "enterpriseToEbitda", "revenueGrowth",
                 "earningsGrowth", "debtToEquity", "currentRatio"]
+
+
+def valid(data):
+    """A fetch is usable if Finnhub gave us a company name.
+    (The old price-history fallback went away with yfinance.)"""
+    info = data.get("info") or {}
+    return bool(info.get("longName") or info.get("shortName"))
 
 
 # ============================================================
