@@ -158,6 +158,105 @@ _METRIC_PCT = {
 
 
 # ============================================================
+#  Industry -> sector
+# ============================================================
+# Finnhub publishes a single "finnhubIndustry" field, which is industry-level
+# (e.g. "Semiconductors"). Mapping it up to a GICS-style sector gives the two
+# distinct labels the report expects. Unknown industries return None, and the
+# report just shows the industry alone.
+_SECTOR_BY_INDUSTRY = {
+    # Information Technology
+    "semiconductors": "Information Technology",
+    "software": "Information Technology",
+    "technology": "Information Technology",
+    "electronic equipment": "Information Technology",
+    "hardware": "Information Technology",
+    "it services": "Information Technology",
+    # Communication Services
+    "media": "Communication Services",
+    "telecommunication": "Communication Services",
+    "communications": "Communication Services",
+    "internet": "Communication Services",
+    "advertising & marketing": "Communication Services",
+    "entertainment": "Communication Services",
+    # Consumer Discretionary
+    "automobiles": "Consumer Discretionary",
+    "retail": "Consumer Discretionary",
+    "hotels restaurants & leisure": "Consumer Discretionary",
+    "textiles apparel & luxury goods": "Consumer Discretionary",
+    "homebuilding": "Consumer Discretionary",
+    "leisure products": "Consumer Discretionary",
+    "distributors": "Consumer Discretionary",
+    "education": "Consumer Discretionary",
+    # Consumer Staples
+    "beverages": "Consumer Staples",
+    "food products": "Consumer Staples",
+    "tobacco": "Consumer Staples",
+    "consumer products": "Consumer Staples",
+    "household products": "Consumer Staples",
+    "personal products": "Consumer Staples",
+    # Energy
+    "energy": "Energy",
+    "oil & gas": "Energy",
+    # Financials
+    "banking": "Financials",
+    "insurance": "Financials",
+    "financial services": "Financials",
+    "diversified financial services": "Financials",
+    "capital markets": "Financials",
+    # Health Care
+    "health care": "Health Care",
+    "pharmaceuticals": "Health Care",
+    "biotechnology": "Health Care",
+    "life sciences tools & services": "Health Care",
+    "medical devices": "Health Care",
+    # Industrials
+    "aerospace & defense": "Industrials",
+    "machinery": "Industrials",
+    "industrial conglomerates": "Industrials",
+    "building": "Industrials",
+    "construction": "Industrials",
+    "commercial services & supplies": "Industrials",
+    "logistics & transportation": "Industrials",
+    "road & rail": "Industrials",
+    "airlines": "Industrials",
+    "marine": "Industrials",
+    "transportation infrastructure": "Industrials",
+    "trading companies & distributors": "Industrials",
+    "professional services": "Industrials",
+    "electrical equipment": "Industrials",
+    "business services": "Industrials",
+    # Materials
+    "chemicals": "Materials",
+    "metals & mining": "Materials",
+    "packaging": "Materials",
+    "paper & forest": "Materials",
+    "constr. mat.": "Materials",
+    # Real Estate
+    "real estate": "Real Estate",
+    "reit": "Real Estate",
+    # Utilities
+    "utilities": "Utilities",
+    "electric utilities": "Utilities",
+    "gas utilities": "Utilities",
+    "water utilities": "Utilities",
+}
+
+
+def industry_to_sector(industry):
+    """Roll a Finnhub industry label up to a GICS-style sector, or None."""
+    key = str(industry or "").strip().lower()
+    if not key:
+        return None
+    if key in _SECTOR_BY_INDUSTRY:
+        return _SECTOR_BY_INDUSTRY[key]
+    for needle, sector in _SECTOR_BY_INDUSTRY.items():
+        if needle in key or key in needle:
+            return sector
+    return None
+
+
+# ============================================================
 #  get_info — replaces yfinance Ticker.info (the rate-limit culprit)
 # ============================================================
 def get_info(ticker):
@@ -187,7 +286,7 @@ def get_info(ticker):
     info["industry"]            = profile.get("finnhubIndustry")
     info["industryDisp"]        = profile.get("finnhubIndustry")
     info["industryKey"]         = profile.get("finnhubIndustry")
-    info["sector"]              = profile.get("finnhubIndustry")  # Finnhub doesn't split sector vs industry
+    info["sector"]              = industry_to_sector(profile.get("finnhubIndustry"))
     info["longBusinessSummary"] = None  # free tier doesn't include a description; renderer shows "—"
 
     # ---- market cap & shares (Finnhub returns these in millions) ----
