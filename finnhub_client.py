@@ -1,14 +1,14 @@
-﻿"""
+"""
 Finnhub adapter for Tickerbase.
 
 Replaces the heaviest yfinance calls (.info + peer info fetches) with Finnhub
 API calls that work reliably from cloud server IPs like Render. The renderer
-in tickerbase.py doesn't change â€” each function here returns data in the same
+in tickerbase.py doesn't change — each function here returns data in the same
 shape yfinance returns, so the swap is surgical.
 
 Free Finnhub tier covers everything in this file (60 calls/min, no card).
-  â€¢ Get a key:  https://finnhub.io/dashboard
-  â€¢ Set env var FINNHUB_API_KEY before calling any function in this module.
+  • Get a key:  https://finnhub.io/dashboard
+  • Set env var FINNHUB_API_KEY before calling any function in this module.
 """
 
 import time
@@ -40,7 +40,7 @@ TIMEOUT = 8  # seconds per HTTP request
 
 
 # ============================================================
-#  Minimal table type â€” replaces pandas.DataFrame
+#  Minimal table type — replaces pandas.DataFrame
 # ============================================================
 # The renderer only ever uses three things: .empty, .iloc[0], and
 # .head(n).iterrows(). pandas dragged in numpy and ~15 other packages
@@ -70,11 +70,11 @@ class Table:
         return iter(self._rows)
 
 # ============================================================
-#  HTTP plumbing â€” every external call goes through here
+#  HTTP plumbing — every external call goes through here
 # ============================================================
 def _get(path, params=None, retries=1):
     """One GET to Finnhub. Returns parsed JSON, or None on any failure.
-    Never raises â€” callers can treat None as 'no data'."""
+    Never raises — callers can treat None as 'no data'."""
     if not FINNHUB_KEY:
         return None
     p = dict(params or {})
@@ -97,7 +97,7 @@ def _get(path, params=None, retries=1):
 
 
 # ============================================================
-#  Small helpers â€” keep number handling consistent
+#  Small helpers — keep number handling consistent
 # ============================================================
 def _f(x):
     """Float or None, coercing strings, rejecting NaN/inf."""
@@ -141,7 +141,7 @@ _METRIC_DIRECT = {
     "fiftyTwoWeekLow":               "52WeekLow",
 }
 
-# These come from Finnhub as percentages â€” divide by 100 to match yfinance shape.
+# These come from Finnhub as percentages — divide by 100 to match yfinance shape.
 _METRIC_PCT = {
     "grossMargins":      "grossMarginTTM",
     "operatingMargins":  "operatingMarginTTM",
@@ -156,7 +156,7 @@ _METRIC_PCT = {
 
 
 # ============================================================
-#  get_info â€” replaces yfinance Ticker.info (the rate-limit culprit)
+#  get_info — replaces yfinance Ticker.info (the rate-limit culprit)
 # ============================================================
 def get_info(ticker):
     """Return a yfinance-shaped 'info' dict built from Finnhub.
@@ -186,7 +186,7 @@ def get_info(ticker):
     info["industryDisp"]        = profile.get("finnhubIndustry")
     info["industryKey"]         = profile.get("finnhubIndustry")
     info["sector"]              = profile.get("finnhubIndustry")  # Finnhub doesn't split sector vs industry
-    info["longBusinessSummary"] = None  # free tier doesn't include a description; renderer shows "â€”"
+    info["longBusinessSummary"] = None  # free tier doesn't include a description; renderer shows "—"
 
     # ---- market cap & shares (Finnhub returns these in millions) ----
     mcap_m = _f(profile.get("marketCapitalization"))
@@ -203,16 +203,34 @@ def get_info(ticker):
     info["dayLow"]                      = _f(quote.get("l"))
     info["regularMarketOpen"]           = _f(quote.get("o"))
 
+    # ---- analyst consensus (drives the Analysts pillar) ----
+    # yfinance supplied recommendationMean/Key directly; Finnhub gives raw
+    # buy/hold/sell counts, so derive the same numbers from the latest period.
+    rec_rows = _get("/stock/recommendation", {"symbol": ticker})
+    if rec_rows and isinstance(rec_rows, list):
+        r0 = rec_rows[0] or {}
+        counts = [int(r0.get(k) or 0) for k in
+                  ("strongBuy", "buy", "hold", "sell", "strongSell")]
+        total = sum(counts)
+        if total > 0:
+            mean = sum(c * w for c, w in zip(counts, (1, 2, 3, 4, 5))) / total
+            info["recommendationMean"] = mean
+            info["numberOfAnalystOpinions"] = total
+            info["recommendationKey"] = ("strong_buy" if mean <= 1.5 else
+                                         "buy" if mean <= 2.5 else
+                                         "hold" if mean <= 3.5 else
+                                         "underperform" if mean <= 4.5 else "sell")
+
     # ---- metrics: direct pass-through ----
     for yk, fk in _METRIC_DIRECT.items():
         info[yk] = _f(m.get(fk))
 
-    # ---- metrics: percent â†’ decimal ----
+    # ---- metrics: percent → decimal ----
     for yk, fk in _METRIC_PCT.items():
         info[yk] = _pct_to_dec(m.get(fk))
 
     # ---- yfinance keys with no clean Finnhub equivalent: keep them as None
-    # so renderer .get() calls all work and just show "â€”" in those spots.
+    # so renderer .get() calls all work and just show "—" in those spots.
     for k in ("forwardPE", "forwardEps", "trailingPegRatio", "pegRatio",
               "fiveYearAvgDividendYield", "trailingAnnualDividendRate",
               "trailingAnnualDividendYield", "ebitda", "totalRevenue",
@@ -224,7 +242,7 @@ def get_info(ticker):
 
 
 # ============================================================
-#  get_recommendations â€” replaces yfinance Ticker.recommendations
+#  get_recommendations — replaces yfinance Ticker.recommendations
 # ============================================================
 def get_recommendations(ticker):
     """Return a Table matching yfinance .recommendations shape.
@@ -246,7 +264,7 @@ def get_recommendations(ticker):
 
 
 # ============================================================
-#  get_insider_transactions â€” replaces yfinance Ticker.insider_transactions
+#  get_insider_transactions — replaces yfinance Ticker.insider_transactions
 # ============================================================
 def get_insider_transactions(ticker):
     """Return a Table matching yfinance .insider_transactions shape."""
@@ -274,7 +292,7 @@ def get_insider_transactions(ticker):
 
 
 # ============================================================
-#  get_peer_data â€” replaces fetch_peers() in tickerbase.py
+#  get_peer_data — replaces fetch_peers() in tickerbase.py
 # ============================================================
 _PEER_METRICS = ["grossMargins", "operatingMargins", "profitMargins",
                  "returnOnEquity", "returnOnAssets", "trailingPE",
@@ -300,7 +318,7 @@ def _peer_metric_snapshot(ticker):
 
 
 def get_peer_data(info):
-    """Return {'name','medians','n','tickers'} â€” same shape as tickerbase.fetch_peers()."""
+    """Return {'name','medians','n','tickers'} — same shape as tickerbase.fetch_peers()."""
     if not isinstance(info, dict):
         return None
     self_sym = (info.get("symbol") or "").upper()
@@ -339,51 +357,3 @@ def get_peer_data(info):
 
     return {"name": industry, "medians": medians,
             "n": max(len(v) for v in vals.values()), "tickers": peers}
-
-class Table:
-    def __init__(self, rows):
-        self._rows = [dict(r) for r in rows]
-
-    @property
-    def empty(self):
-        return not self._rows
-
-    @property
-    def iloc(self):
-        return self._rows
-
-    def head(self, n):
-        return Table(self._rows[:n])
-
-    def iterrows(self):
-        return enumerate(self._rows)
-
-    def __len__(self):
-        return len(self._rows)
-
-    def __iter__(self):
-        return iter(self._rows)
-
-class Table:
-    def __init__(self, rows):
-        self._rows = [dict(r) for r in rows]
-
-    @property
-    def empty(self):
-        return not self._rows
-
-    @property
-    def iloc(self):
-        return self._rows
-
-    def head(self, n):
-        return Table(self._rows[:n])
-
-    def iterrows(self):
-        return enumerate(self._rows)
-
-    def __len__(self):
-        return len(self._rows)
-
-    def __iter__(self):
-        return iter(self._rows)

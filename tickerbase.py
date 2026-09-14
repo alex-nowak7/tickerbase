@@ -1,5 +1,5 @@
 """
-Tickerbase — a one-stop stock research report generator.
+Tickerbase, a one-stop stock research report generator.
 
 Type a ticker, and Tickerbase fetches everything a serious investor weighs
 before buying, then renders it as a single plain-English HTML report.
@@ -316,8 +316,8 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .scard .sub{color:var(--muted);font-size:13.5px;margin:3px 0 0;}
 .scard .pr{text-align:right;}.scard .pr .v{font-size:28px;font-weight:700;}.scard .pr .c{font-size:14px;font-weight:600;margin-top:2px;}
 .up{color:var(--green);}.down{color:var(--red);}
-.pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin-top:18px;}
-.pillar{background:var(--surface2);border-radius:var(--r-sm);padding:11px 12px;}
+.pillars{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin-top:18px;}
+.pillar{background:var(--surface2);border-radius:var(--r-sm);padding:11px 12px;flex:1 1 150px;min-width:140px;max-width:220px;box-sizing:border-box;}
 .pillar .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;}
 .pillar .r{display:flex;align-items:center;gap:7px;margin-top:6px;}
 .dots{display:flex;gap:3px;}.dot{width:8px;height:8px;border-radius:50%;background:var(--border2);}
@@ -442,7 +442,7 @@ def tip2(what, how):
             f'<b>How to read it.</b> {esc(how)}</span></span>')
 
 
-# Standardized status vocabulary — used EVERYWHERE so it never gets confusing.
+# Standardized status vocabulary, used EVERYWHERE so it never gets confusing.
 #   good    -> green pill "Good"
 #   ok      -> amber pill "Average"
 #   bad     -> red  pill "Watch"
@@ -547,7 +547,7 @@ def section(sid, icon, title, subtitle, grade, body, open_default=False):
 # ---------- individual sections ----------
 def sec_primer(peers=None):
     cards = [
-        ("🏢", "A good business?", "Strong, steady profit margins and high return on equity usually mean the company has a durable edge — Buffett's 'moat'."),
+        ("🏢", "A good business?", "Strong, steady profit margins and high return on equity usually mean the company has a durable edge, Buffett's 'moat'."),
         ("⚖️", "A fair price?", "The P/E ratio is what you pay per $1 of yearly profit. A great company at a crazy price can still lose you money."),
         ("🩺", "Financially safe?", "Low debt and enough cash to cover bills are what let a company survive recessions."),
         ("🌱", "Growing?", "Rising revenue and profit over several years means the business is winning, not just lucky."),
@@ -560,17 +560,17 @@ def sec_primer(peers=None):
     legend = ('<div class="sub-h">Reading the colored labels</div>'
               '<div class="primer-grid">'
               '<div class="pc"><div class="pt"><span class="pill good">Good</span></div>'
-              '<div class="pd">This metric looks favorable — at or better than what you\'d want, or better than industry peers.</div></div>'
+              '<div class="pd">This metric looks favorable, at or better than what you\'d want, or better than industry peers.</div></div>'
               '<div class="pc"><div class="pt"><span class="pill ok">Average</span></div>'
-              '<div class="pd">Middle-of-the-road — neither a strength nor a worry. Roughly typical for its industry.</div></div>'
+              '<div class="pd">Middle-of-the-road, neither a strength nor a worry. Roughly typical for its industry.</div></div>'
               '<div class="pc"><div class="pt"><span class="pill bad">Watch</span></div>'
-              '<div class="pd">Worth a closer look — weaker than ideal, or behind industry peers. Not automatically bad, but dig in.</div></div>'
+              '<div class="pd">Worth a closer look, weaker than ideal, or behind industry peers. Not automatically bad, but dig in.</div></div>'
               '</div>')
     if peers and peers.get("medians"):
         ind = esc(peers.get("name") or "its industry")
         n = peers.get("n", 0)
         ind_note = (f'<p class="note"><b>Compared to its industry.</b> Wherever possible, this report rates each '
-                    f'number against the median of <b>{n}</b> companies in <b>{ind}</b> — because a gross margin '
+                    f'number against the median of <b>{n}</b> companies in <b>{ind}</b>, because a gross margin '
                     f'that\'s great for a steelmaker would be poor for a software company. When a label says '
                     f'"vs industry," that\'s the comparison it\'s making.</p>')
     else:
@@ -580,7 +580,7 @@ def sec_primer(peers=None):
     body = (f'<div class="primer-grid">{grid}</div>'
             '<p class="note"><b>The big idea:</b> a stock is a piece of a real business. You\'re trying to '
             'buy a good business at a fair price and hold it. Each section below scores one of these six '
-            'questions so you can form your own view — none of it is a "buy" or "sell" command.</p>'
+            'questions so you can form your own view, none of it is a "buy" or "sell" command.</p>'
             + legend + ind_note)
     return section("primer", "primer", "How to Read This Page",
                    "The 60-second version of how professionals judge a stock", None, body, open_default=True)
@@ -607,13 +607,13 @@ def sec_business(info):
     )
     body = (desc_html + '<div class="mgrid">'
             + metric("Market cap", fmt_usd(info.get("marketCap")),
-                     tip2("The total market value of all the company's shares — what it would cost to buy the whole company at today's price.",
+                     tip2("The total market value of all the company's shares, what it would cost to buy the whole company at today's price.",
                           "Bigger companies (over $200B, 'large cap') are generally steadier; small ones can grow faster but swing harder. It's a size gauge, not good or bad by itself."))
             + metric("Sector", esc(info.get("sector") or "—"),
                      tip2("The broad slice of the economy the company belongs to, like Technology or Healthcare.",
                           "Useful context: it sets expectations for what 'normal' margins, growth, and valuation look like."))
             + metric("Industry", esc(info.get("industry") or "—"),
-                     tip2("The specific business it competes in within its sector — e.g. 'Consumer Electronics' inside Technology.",
+                     tip2("The specific business it competes in within its sector, e.g. 'Consumer Electronics' inside Technology.",
                           "This is the peer group used for the industry comparisons elsewhere in this report."))
             + metric("Employees", f"{emp:,}" if isinstance(emp, (int, float)) else "—",
                      tip2("Full-time headcount.",
@@ -649,7 +649,7 @@ def sec_price(info, stats, price_chart):
     body = ('<div class="mgrid">'
             + metric("1-month return", fmt_pct(stats["ret1m"]),
                      tip2("How much the share price changed over roughly the last month.",
-                          "Short-term moves are noisy — don't read too much into one month. Green just means it rose, red that it fell."),
+                          "Short-term moves are noisy, don't read too much into one month. Green just means it rose, red that it fell."),
                      ret_status(stats["ret1m"]))
             + metric("6-month return", fmt_pct(stats["ret6m"]),
                      tip2("Price change over roughly the last six months.",
@@ -661,9 +661,9 @@ def sec_price(info, stats, price_chart):
                      ret_status(stats["ret1y"]))
             + metric("52-week range", f"${stats['lo52']:.0f}–${stats['hi52']:.0f}",
                      tip2("The lowest and highest prices over the past year.",
-                          "Trading near the high reflects optimism; near the low reflects pessimism — which could be a bargain or a warning, so check the other sections."))
+                          "Trading near the high reflects optimism; near the low reflects pessimism, which could be a bargain or a warning, so check the other sections."))
             + metric("Trend", "Uptrend" if trend_up else "Downtrend",
-                     tip2("Compares the average price over the last 50 days to the last 200 days — a widely watched momentum signal.",
+                     tip2("Compares the average price over the last 50 days to the last 200 days, a widely watched momentum signal.",
                           "When the short-term average is above the long-term one (uptrend), momentum is positive. It describes direction, not whether the price is fair."),
                      {"cls": "good" if trend_up else "bad", "label": STATUS_LABEL["good" if trend_up else "bad"], "vs": ""})
             + metric("Beta", fmt_ratio(beta),
@@ -678,7 +678,7 @@ def sec_price(info, stats, price_chart):
 
 def sec_risk(stats):
     if not stats:
-        return section("risk", "risk", "Risk & the Bumpy Ride", "Data Unavailable",
+        return section("risk", "risk", "Risk", "Data Unavailable",
                        ("n", "no data"), '<div class="empty"><span><b>Price history didn\'t load.</b></span></div>')
     vol, dd = stats["vol"], stats["max_dd"]
     vcls = "good" if vol < 25 else "ok" if vol < 45 else "bad"
@@ -694,24 +694,24 @@ def sec_risk(stats):
                      {"cls": dcls, "label": STATUS_LABEL[dcls], "vs": ""})
             + metric("Now vs its high", f"{stats['from_hi']:.0f}%",
                      tip2("How far below its two-year high the stock currently trades.",
-                          "Near 0% means it's at its peak; a deep negative means it's well off its highs — which could be a discount or a sign of trouble. Cross-check with valuation and growth."))
+                          "Near 0% means it's at its peak; a deep negative means it's well off its highs, which could be a discount or a sign of trouble. Cross-check with valuation and growth."))
             + metric("Best single day", fmt_pct(stats["best"]),
                      tip2("The largest one-day gain over the period.",
-                          "Big single-day jumps are a hallmark of volatile stocks — exciting on the way up, painful on the way down."))
+                          "Big single-day jumps are a hallmark of volatile stocks, exciting on the way up, painful on the way down."))
             + metric("Worst single day", fmt_pct(stats["worst"]),
                      tip2("The largest one-day drop over the period.",
                           "Pairs with 'best single day' to show how dramatic the daily swings can get."))
             + metric("Up days", f"{stats['up_days']:.0f}%",
                      tip2("The share of trading days that ended higher than they started.",
-                          "Around 50% is normal even for great long-term winners — markets rise in uneven bursts, so this being near half is not a concern."))
+                          "Around 50% is normal even for great long-term winners, markets rise in uneven bursts, so this being near half is not a concern."))
             + "</div>")
-    msg = ("This stock has seen <b>severe</b> drops — a wild ride suited only to investors who won't panic-sell at the bottom."
+    msg = ("This stock has seen <b>severe</b> drops, a wild ride suited only to investors who won't panic-sell at the bottom."
            if dd < -40 else
-           "This stock has had <b>meaningful</b> dips — normal for stocks, but be sure you could hold through them without selling."
+           "This stock has had <b>meaningful</b> dips, normal for stocks, but be sure you could hold through them without selling."
            if dd < -20 else
            "This stock has been <b>relatively steady</b> over this period, though past calm never guarantees future calm.")
     body += f'<p class="note">{msg}</p>'
-    return section("risk", "risk", "Risk & the Bumpy Ride", "Know what you're getting into before you buy", None, body)
+    return section("risk", "risk", "Risk", "Know what you're getting into before you buy", None, body)
 
 
 def sec_value(info, peers=None):
@@ -730,19 +730,19 @@ def sec_value(info, peers=None):
     body = ('<div class="mgrid">'
             + metric("P/E (trailing)", fmt_ratio(pe),
                      tip2("Price ÷ last year's profit per share. It says how many dollars you pay for each $1 the company earns annually.",
-                          "Lower is generally cheaper. Roughly: under ~15 is cheap, 15–25 is normal, over ~40 is pricey and needs fast growth to justify — but always judge it against the company's own industry, shown here when available."),
+                          "Lower is generally cheaper. Roughly: under ~15 is cheap, 15–25 is normal, over ~40 is pricey and needs fast growth to justify, but always judge it against the company's own industry, shown here when available."),
                      pe_status)
             + metric("P/E (forward)", fmt_ratio(pe_fwd),
                      tip2("The same price-to-profit idea, but using next year's expected earnings instead of last year's.",
                           "If it's lower than the trailing P/E, the market expects earnings to grow. If higher, earnings are expected to fall."),
                      assess(pe_fwd, 22, 45, higher=False, peers=peers, key="forwardPE"))
             + metric("PEG ratio", fmt_ratio(peg),
-                     tip2("The P/E divided by the company's growth rate — it adjusts 'how expensive' for 'how fast it's growing'.",
+                     tip2("The P/E divided by the company's growth rate, it adjusts 'how expensive' for 'how fast it's growing'.",
                           "Around 1.0 is often considered fair value. Under 1 can be a bargain for the growth you get; over 2 is steep."),
                      assess(peg, 1.2, 2.5, higher=False))
             + metric("Price / Sales", fmt_ratio(ps),
                      tip2("Company value compared to its yearly revenue. Useful for judging companies that aren't very profitable yet.",
-                          "Lower is cheaper. What counts as 'normal' varies hugely by industry — software trades far higher than retail — so the industry comparison matters most here."),
+                          "Lower is cheaper. What counts as 'normal' varies hugely by industry, software trades far higher than retail, so the industry comparison matters most here."),
                      assess(ps, 3, 10, higher=False, peers=peers, key="priceToSalesTrailing12Months"))
             + metric("Price / Book", fmt_ratio(pb),
                      tip2("Price compared to the company's net assets on paper (book value). A classic Buffett yardstick for asset-heavy businesses.",
@@ -754,13 +754,13 @@ def sec_value(info, peers=None):
                      assess(ev_eb, 12, 22, higher=False, peers=peers, key="enterpriseToEbitda"))
             + metric("Dividend yield", f"{dy:.2f}%" if dy is not None else "—",
                      tip2("The annual cash dividend paid to shareholders, as a percentage of the share price.",
-                          "0% isn't bad — many great companies reinvest profits instead. A very high yield (8%+) can signal the market doubts it's sustainable."))
+                          "0% isn't bad, many great companies reinvest profits instead. A very high yield (8%+) can signal the market doubts it's sustainable."))
             + metric("Payout ratio", f"{payout*100:.0f}%" if payout is not None else "—",
                      tip2("The share of profit paid out as dividends.",
                           "Comfortable below ~60%. Above ~80% leaves little cushion, so the dividend is more at risk if profits dip."))
             + "</div>"
-            + _peer_note(peers, "These valuation ratios are judged against this company's own industry where shown — a P/E that's cheap for software may be expensive for a utility."))
-    return section("value", "value", "Valuation — Cheap or Expensive?",
+            + _peer_note(peers, "These valuation ratios are judged against this company's own industry where shown, a P/E that's cheap for software may be expensive for a utility."))
+    return section("value", "value", "Valuation",
                    "What you're paying per dollar of earnings, sales, and assets", grade, body)
 
 
@@ -771,7 +771,7 @@ def _peer_note(peers, fallback):
         n = peers.get("n", 0)
         return (f'<p class="note"><b>Industry comparison.</b> The green/amber/red ratings below compare this '
                 f'company against the median of <b>{n}</b> peers in <b>{ind}</b>. That\'s how we avoid comparing '
-                f'apples to oranges — a healthy number for one industry can be poor for another. '
+                f'apples to oranges, a healthy number for one industry can be poor for another. '
                 f'Where a peer median isn\'t available, a general rule-of-thumb is used instead.</p>')
     return f'<p class="note">{fallback} (Industry peer data wasn\'t available for this company, so general rule-of-thumb ranges are used.)</p>'
 
@@ -806,11 +806,11 @@ def sec_health(info, peers=None):
     body = ('<div class="mgrid">'
             + metric("Net profit margin", fmt_pct0(pct(pm)),
                      tip2("Of every $1 of sales, how many cents end up as actual profit after all costs.",
-                          "Higher means a more efficient, often higher-quality business. Over 20% is excellent in most industries — but grocery chains live on 2% while software can top 30%, so the industry comparison is what matters."),
+                          "Higher means a more efficient, often higher-quality business. Over 20% is excellent in most industries, but grocery chains live on 2% while software can top 30%, so the industry comparison is what matters."),
                      statuses["pm"])
             + metric("Gross margin", fmt_pct0(pct(gm)),
                      tip2("Profit left after only the direct cost of making the product or service, before overhead, marketing, and R&D.",
-                          "High, stable gross margins suggest pricing power — a sign of a durable 'moat'. A great gross margin for a steelmaker (~15%) would be weak for a software firm (~70%), which is exactly why this is compared to industry peers."),
+                          "High, stable gross margins suggest pricing power, a sign of a durable 'moat'. A great gross margin for a steelmaker (~15%) would be weak for a software firm (~70%), which is exactly why this is compared to industry peers."),
                      statuses["gm"])
             + metric("Operating margin", fmt_pct0(pct(om)),
                      tip2("Profit from the core business after all operating costs, but before interest and taxes.",
@@ -821,7 +821,7 @@ def sec_health(info, peers=None):
                           "Buffett prizes consistent ROE above 15%. Very high ROE can sometimes just mean lots of debt, so read it alongside Debt/Equity."),
                      statuses["roe"])
             + metric("Return on assets", fmt_pct0(pct(roa)),
-                     tip2("Profit relative to everything the company owns — how efficiently it turns its assets into earnings.",
+                     tip2("Profit relative to everything the company owns, how efficiently it turns its assets into earnings.",
                           "Higher is better. Asset-heavy industries (airlines, utilities) naturally run lower, so judge against peers."),
                      statuses["roa"])
             + metric("Debt / Equity", fmt_ratio(de / 100 if de is not None else None),
@@ -833,7 +833,7 @@ def sec_health(info, peers=None):
                           "Above 1.0 means it can cover near-term obligations; 1.5–3 is comfortable. Below 1 can be a liquidity warning."),
                      statuses["cr"])
             + metric("Free cash flow", fmt_usd(fcf),
-                     tip2("The actual cash left over after running the business and paying for investments — harder to fudge than reported profit.",
+                     tip2("The actual cash left over after running the business and paying for investments, harder to fudge than reported profit.",
                           "Positive and growing is what you want; it funds dividends, buybacks, and debt repayment. Persistent negative free cash flow means the company is burning money."),
                      fcf_status)
             + "</div>"
@@ -857,24 +857,24 @@ def sec_growth(info, growth_chart, peers=None):
     body = ('<div class="mgrid">'
             + metric("Revenue growth (YoY)", fmt_pct(pct(rg)),
                      tip2("How much total sales grew compared with the same period a year ago.",
-                          "Growing sales is the engine of a healthy business. Over ~10% is strong; flat or negative is a worry. Mature industries grow slowly, fast ones quickly — hence the peer comparison."),
+                          "Growing sales is the engine of a healthy business. Over ~10% is strong; flat or negative is a worry. Mature industries grow slowly, fast ones quickly, hence the peer comparison."),
                      rg_status)
             + metric("Earnings growth (YoY)", fmt_pct(pct(eg)),
-                     tip2("How much profit grew versus a year ago — ultimately what owners care about most.",
+                     tip2("How much profit grew versus a year ago, ultimately what owners care about most.",
                           "Rising profit, especially faster than revenue, signals improving efficiency. Falling profit while sales rise can mean margin pressure."),
                      assess(pct(eg), 10, 0, peers=peers, key="earningsGrowth", is_pct_frac=True))
             + metric("Revenue (TTM)", fmt_usd(rev),
-                     tip2("Total sales over the trailing twelve months — the company's top line.",
+                     tip2("Total sales over the trailing twelve months, the company's top line.",
                           "Bigger isn't automatically better; pair it with growth and margins. It mainly tells you the scale of the business."))
             + metric("EBITDA", fmt_usd(ebitda),
-                     tip2("Earnings before interest, taxes, depreciation and amortization — a rough proxy for cash the core operations throw off.",
+                     tip2("Earnings before interest, taxes, depreciation and amortization, a rough proxy for cash the core operations throw off.",
                           "Useful for comparing operating performance across companies with different debt and tax situations."))
             + "</div>")
     if growth_chart:
         body += ('<div class="sub-h">Multi-year trend</div>'
                  f'<img class="chart" src="{growth_chart}" alt="revenue and net income by year">'
                  '<p class="note">Bars show annual revenue and net income (in $B), oldest to newest. '
-                 'Rising, consistent bars are what you want — a single good year can be luck.</p>')
+                 'Rising, consistent bars are what you want, a single good year can be luck.</p>')
     return section("growth", "growth", "Growth", "Is the business getting bigger and more profitable?", grade, body)
 
 
@@ -926,7 +926,7 @@ def sec_people(info, data):
                            {"cls": "good", "label": STATUS_LABEL["good"], "vs": ""} if upside > 0
                            else {"cls": "bad", "label": STATUS_LABEL["bad"], "vs": ""})
         if tgt_low and tgt_high:
-            body += metric("Target range", f"${tgt_low:.0f}–${tgt_high:.0f}", "Lowest and highest analyst targets — shows how much they disagree.")
+            body += metric("Target range", f"${tgt_low:.0f}–${tgt_high:.0f}", "Lowest and highest analyst targets, shows how much they disagree.")
         body += "</div>"
     # ---- recommendation split bar ----
     recs = data.get("recs")
@@ -997,7 +997,7 @@ def sec_people(info, data):
         try:
             rows = ""
             for _, r in ins.head(6).iterrows():
-                txt = str(r.get("Text", "") or "")
+                txt = str(r.get("Text") or r.get("Transaction") or "")
                 is_buy = any(w in txt.lower() for w in ["purchase", "buy", "acqui", "exercise"])
                 name = esc(r.get("Insider", "—"))
                 sd = r.get("Start Date")
@@ -1041,7 +1041,7 @@ def sec_checklist(info, stats):
     pct = lambda x: x * 100 if numf(x) is not None else None
     if stats:
         add("y" if stats["last"] >= stats["ma200"] else "n",
-            f"Trading {'above' if stats['last'] >= stats['ma200'] else 'below'} its 200-day average — long-term trend is {'up' if stats['last'] >= stats['ma200'] else 'down'}.")
+            f"Trading {'above' if stats['last'] >= stats['ma200'] else 'below'} its 200-day average, long-term trend is {'up' if stats['last'] >= stats['ma200'] else 'down'}.")
         v = stats["vol"]
         add("y" if v < 40 else "q" if v < 60 else "n",
             f"Volatility is {v:.0f}% a year — {'manageable' if v < 40 else 'on the higher side' if v < 60 else 'very high; expect big swings'}.")
@@ -1121,7 +1121,7 @@ def sec_summary(info, stats, data):
     avg = sum(known) / len(known) if known else None
     verdict, vcls = _consensus_from_score(avg)
 
-    # Wall Street consensus, shown alongside ours
+    # Wall Street consensus (from Yahoo), shown alongside ours
     rec_key = gi(info, "recommendationKey")
     ws = None
     if rec_key:
@@ -1178,7 +1178,7 @@ def sec_summary(info, stats, data):
         if tgt_mean:
             up = (tgt_mean - price) / price * 100
             rng = f" (range ${tgt_low:.0f}–${tgt_high:.0f})" if (tgt_low and tgt_high) else ""
-            one_yr = (f'<b>1 year — analyst consensus target: {fmt_price(tgt_mean)}</b>{rng}, '
+            one_yr = (f'<b>1 year, analyst consensus target: {fmt_price(tgt_mean)}</b>{rng}, '
                       f'about {up:+.0f}% from today\'s {fmt_price(price)}. '
                       f'{"This is real Wall Street data" if n_an else "Based on available analyst data"}'
                       f'{f" from {int(n_an)} analysts" if isinstance(n_an,(int,float)) else ""}.')
@@ -1226,7 +1226,7 @@ def sec_summary(info, stats, data):
         f'</div>'
         + outlook +
         '<p class="note"><b>How to use this.</b> The verdict is a data-derived composite of the six pillars above '
-        'blended with analyst sentiment — a structured summary, <b>not financial advice</b> and not a guarantee. '
+        'blended with analyst sentiment, a structured summary, <b>not financial advice</b> and not a guarantee. '
         'The price scenarios are illustrative math, not forecasts. Real outcomes depend on the business, the economy, '
         'and events no model can foresee. Always do your own research and consider a licensed professional before investing.</p>'
     )
@@ -1235,13 +1235,10 @@ def sec_summary(info, stats, data):
                    open_default=True)
 
 
-# ============================================================
-#  SCORECARD + PAGE ASSEMBLY
-# ============================================================
 def build_scorecard(info, stats):
     name = info.get("longName") or info.get("shortName") or info.get("symbol") or ""
     ticker = info.get("symbol") or ""
-    sub = " · ".join([x for x in [info.get("fullExchangeName") or info.get("exchange"),
+    sub = " \u00b7 ".join([x for x in [info.get("fullExchangeName") or info.get("exchange"),
                                   info.get("sector"), info.get("industry")] if x])
     price = numf(gi(info, "currentPrice")) or numf(gi(info, "regularMarketPrice")) \
         or (stats["last"] if stats else None) or numf(gi(info, "previousClose"))
@@ -1252,8 +1249,9 @@ def build_scorecard(info, stats):
         chg_html = f'<div class="c {"up" if chg >= 0 else "down"}">{fmt_pct(chg)} today</div>'
 
     s = score_pillars(info, stats)
+    # Momentum dropped: it needs price history, which left with yfinance.
     order = [("Business", "biz"), ("Value", "val"), ("Health", "health"),
-             ("Growth", "growth"), ("Momentum", "mom"), ("Analysts", "smart")]
+             ("Growth", "growth"), ("Analysts", "smart")]
     pillars = ""
     for lbl, k in order:
         sc = s[k]
@@ -1262,23 +1260,12 @@ def build_scorecard(info, stats):
         pillars += (f'<div class="pillar"><div class="l">{lbl}</div>'
                     f'<div class="r"><div class="dots">{dots}</div><span class="gr">{pillar_grade(sc)}</span></div></div>')
 
-    known = [x for x in s.values() if x is not None]
-    avg = sum(known) / len(known) if known else None
-    if avg is None:
-        verdict = "Live price loaded, but the detailed feed was thin for this ticker — the sections below show whatever did come through."
-    else:
-        tone = "broadly strong" if avg >= 4 else "mixed but reasonable" if avg >= 3 else "showing real caution flags"
-        verdict = (f'<b>Quick read:</b> across the six pillars, {esc(ticker)} looks <b>{tone}</b> on the data available '
-                   f'(average {avg:.1f} of 5). Open each section below for the plain-English "why." '
-                   "This is a research starting point, never a buy or sell command.")
-
     return f"""<div class="scard">
   <div class="top">
     <div><p class="nm">{esc(name)} ({esc(ticker)})</p><p class="sub">{esc(sub)}</p></div>
     <div class="pr"><div class="v">{fmt_price(price)}</div>{chg_html}</div>
   </div>
   <div class="pillars">{pillars}</div>
-  <div class="verdict">{verdict}</div>
 </div>"""
 
 
@@ -1310,10 +1297,10 @@ def build_report_fragment(data):
   <button onclick="document.querySelectorAll('.sec').forEach(s=>s.classList.remove('open'))">Collapse all</button>
 </div>
 {sections}
-<p class="disc"><b>Educational tool — not investment advice.</b> Tickerbase compiles publicly available data and
+<p class="disc"><b>Educational tool, not investment advice.</b> Tickerbase compiles publicly available data and
 explains common analysis frameworks. Data may be delayed, incomplete, or wrong, and the "good / caution" thresholds
 are general rules of thumb, not sector-calibrated truth. Nothing here is a recommendation to buy, sell, or hold any
-security. Markets carry real risk of loss — do your own research and consider a licensed financial professional.</p>"""
+security. Markets carry real risk of loss, do your own research and consider a licensed financial professional.</p>"""
 
 
 def build_html(data):
@@ -1342,7 +1329,7 @@ def generate_report(ticker):
     Returns a dict:
         {"ok": True,  "ticker": "AAPL", "html": "<...>", "partial": bool}
         {"ok": False, "ticker": "AAPL", "error": "human-readable reason"}
-    Never raises — always returns a dict.
+    Never raises, always returns a dict.
     """
     ticker = (ticker or "").strip().upper()
     if not ticker:
