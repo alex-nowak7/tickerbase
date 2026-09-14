@@ -363,3 +363,27 @@ class Table:
 
     def __iter__(self):
         return iter(self._rows)
+
+class Table:
+    def __init__(self, rows):
+        self._rows = [dict(r) for r in rows]
+
+    @property
+    def empty(self):
+        return not self._rows
+
+    @property
+    def iloc(self):
+        return self._rows
+
+    def head(self, n):
+        return Table(self._rows[:n])
+
+    def iterrows(self):
+        return enumerate(self._rows)
+
+    def __len__(self):
+        return len(self._rows)
+
+    def __iter__(self):
+        return iter(self._rows)

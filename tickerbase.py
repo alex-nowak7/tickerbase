@@ -19,7 +19,6 @@ from datetime import datetime
 # yfinance, curl_cffi and matplotlib were removed for the Cloudflare Workers
 # migration: none of them run on WebAssembly. Every section that used them is
 # fail-soft and simply renders "-" instead.
-import pandas as pd
 
 import finnhub_client
 
