@@ -84,7 +84,6 @@ async function analyze(t){{
   busy = true;
   $("goBtn").disabled = true;
   $("intro").style.display = "none";
-  $("hero").style.display = "none";
   $("report").innerHTML = "";
   setStatus('<span class="spin"></span>Loading ' + t + ' … (this can take a few seconds)');
   try {{
@@ -99,12 +98,10 @@ async function analyze(t){{
     }} else {{
       setStatus(data.error || "Something went wrong. Please try again.", true);
       $("intro").style.display = "block";
-      $("hero").style.display = "";
     }}
   }} catch(e) {{
     setStatus("Couldn't reach the server. Check your connection and try again.", true);
     $("intro").style.display = "block";
-    $("hero").style.display = "";
   }} finally {{
     busy = false;
     $("goBtn").disabled = false;

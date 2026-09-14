@@ -1424,7 +1424,7 @@ def build_report_fragment(data):
         sec_summary(info, stats, data),
     ])
     stamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
-    return f"""<div class="report-meta">Report for <b>{esc(data['ticker'])}</b> · generated {stamp} · data from Finnhub</div>
+    return f"""<div class="report-meta">Report for <b>{esc(data['ticker'])}</b> · generated {stamp} · data from Finnhub and Twelve Data</div>
 {build_scorecard(info, stats)}
 <div class="controls">
   <button onclick="document.querySelectorAll('.sec').forEach(s=>s.classList.add('open'))">Expand all</button>
@@ -1483,7 +1483,9 @@ def generate_report(ticker):
         return {"ok": False, "ticker": ticker,
                 "error": f"Couldn't find usable data for '{ticker}'. Double-check the symbol and try again.{detail}"}
     try:
-        html = build_html(data)
+        # The website supplies <html>, the CSS and its own header, so return the
+        # body fragment only. build_html() is for the standalone file version.
+        html = build_report_fragment(data)
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "ticker": ticker, "error": f"Couldn't build the report: {e}"}
     return {"ok": True, "ticker": ticker, "html": html,
