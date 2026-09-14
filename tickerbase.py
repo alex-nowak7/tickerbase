@@ -124,7 +124,7 @@ def fetch_all(ticker):
     data["peers"]   = tryget("industry peers",        lambda: finnhub_client.get_peer_data(data["info"]))
 
     # ---- price history: Twelve Data (free tier) ----
-    data["hist"] = tryget(data, "hist", twelvedata_client.get_history, ticker)
+    data["hist"]    = tryget("price history",         lambda: twelvedata_client.get_history(ticker))
 
     # ---- still unavailable on the free stack ----
     # income / targets / upgrades / major came from yfinance.
