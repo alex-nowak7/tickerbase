@@ -128,10 +128,12 @@ _METRIC_DIRECT = {
     "trailingPE":                    "peBasicExclExtraTTM",
     "priceToBook":                   "pbAnnual",
     "priceToSalesTrailing12Months":  "psTTM",
-    "enterpriseToEbitda":            "currentEv/ebitdaAnnual",
+    "enterpriseToEbitda":            "evEbitdaTTM",
+    "forwardPE":                     "forwardPE",
+    "pegRatio":                      "pegTTM",
+    "trailingPegRatio":              "pegTTM",
     # risk / capital structure
     "beta":                          "beta",
-    "debtToEquity":                  "totalDebt/totalEquityAnnual",
     "currentRatio":                  "currentRatioAnnual",
     "quickRatio":                    "quickRatioAnnual",
     # earnings / market
@@ -229,13 +231,44 @@ def get_info(ticker):
     for yk, fk in _METRIC_PCT.items():
         info[yk] = _pct_to_dec(m.get(fk))
 
+    # ---- debt/equity: Finnhub returns a plain ratio (1.35); the renderer and its
+    # peer comparison expect yfinance's scale (135.5). Multiply by 100. ----
+    de = _f(m.get("totalDebt/totalEquityQuarterly"))
+    if de is None:
+        de = _f(m.get("totalDebt/totalEquityAnnual"))
+    info["debtToEquity"] = de * 100.0 if de is not None else None
+
+    # ---- totals derived from per-share metrics x shares outstanding ----
+    # Finnhub's free tier has no income statement, but it does publish these
+    # per-share figures, and we already know the share count.
+    shares = _f(info.get("sharesOutstanding"))
+    if shares:
+        for key, metric_key in (("totalRevenue",   "revenuePerShareTTM"),
+                                ("ebitda",         "ebitdPerShareTTM"),
+                                ("freeCashflow",   "cashFlowPerShareTTM")):
+            per_share = _f(m.get(metric_key))
+            info[key] = per_share * shares if per_share is not None else None
+
+    # ---- enterprise value (Finnhub reports it in millions) ----
+    ev = _f(m.get("enterpriseValue"))
+    info["enterpriseValue"] = ev * 1e6 if ev is not None else None
+
+    # ---- forward EPS, implied by price / forward P/E ----
+    fpe = _f(m.get("forwardPE"))
+    px = _f(info.get("currentPrice"))
+    info["forwardEps"] = (px / fpe) if (fpe and px) else None
+
+    # ---- headcount: revenue / revenue-per-employee ----
+    rev_per_emp = _f(m.get("revenueEmployeeTTM"))     # millions of revenue per employee
+    rev = _f(info.get("totalRevenue"))
+    if rev_per_emp and rev:
+        info["fullTimeEmployees"] = int(round(rev / (rev_per_emp * 1e6)))
+
     # ---- yfinance keys with no clean Finnhub equivalent: keep them as None
     # so renderer .get() calls all work and just show "—" in those spots.
-    for k in ("forwardPE", "forwardEps", "trailingPegRatio", "pegRatio",
-              "fiveYearAvgDividendYield", "trailingAnnualDividendRate",
-              "trailingAnnualDividendYield", "ebitda", "totalRevenue",
-              "totalDebt", "totalCash", "fullTimeEmployees",
-              "operatingCashflow", "freeCashflow"):
+    for k in ("fiveYearAvgDividendYield", "trailingAnnualDividendRate",
+              "trailingAnnualDividendYield", "totalDebt", "totalCash",
+              "operatingCashflow"):
         info.setdefault(k, None)
 
     return info
