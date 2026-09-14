@@ -20,6 +20,7 @@ from datetime import datetime
 # migration: none of them run on WebAssembly. Every section that used them is
 # fail-soft and simply renders "-" instead.
 import finnhub_client
+import twelvedata_client
 
 
 # ============================================================
@@ -122,10 +123,13 @@ def fetch_all(ticker):
     data["insider"] = tryget("insider transactions",  lambda: finnhub_client.get_insider_transactions(ticker))
     data["peers"]   = tryget("industry peers",        lambda: finnhub_client.get_peer_data(data["info"]))
 
-    # ---- yfinance calls removed (see header note) ----
-    # hist / income / targets / upgrades / major used to come from yfinance.
+    # ---- price history: Twelve Data (free tier) ----
+    data["hist"] = tryget(data, "hist", twelvedata_client.get_history, ticker)
+
+    # ---- still unavailable on the free stack ----
+    # income / targets / upgrades / major came from yfinance.
     # balance / cashflow / inst / calendar were fetched but never read.
-    for _k in ("hist", "income", "balance", "cashflow", "targets",
+    for _k in ("income", "balance", "cashflow", "targets",
                "inst", "major", "upgrades", "calendar"):
         data[_k] = None
 
@@ -265,7 +269,7 @@ def pillar_grade(s):
 
 
 # ============================================================
-#  CHARTS  — matplotlib → base64 PNG (self-contained, no CDN)
+#  CHARTS  - inline SVG, pure Python, no dependencies
 # ============================================================
 _AXIS = "#8a8a82"  # mid gray, readable on light & dark
 _ACCENT = "#2a6df4"
@@ -273,9 +277,64 @@ _GREEN = "#1f8a4c"
 
 
 def chart_price(stats):
-    """Charts removed for Workers (matplotlib is too heavy for WebAssembly).
-    Returning None makes every call site skip the <img> cleanly."""
-    return None
+    """Render the 2-year close series as inline SVG.
+
+    Pure Python, no dependencies, ~2KB on the wire instead of a base64 PNG,
+    and it stays sharp at any zoom."""
+    if not stats:
+        return None
+    closes = stats.get("closes") or []
+    dates = stats.get("dates") or []
+    if len(closes) < 20:
+        return None
+
+    W, H = 720, 240
+    PL, PR, PT, PB = 52, 14, 14, 26        # padding: left, right, top, bottom
+    iw, ih = W - PL - PR, H - PT - PB
+
+    lo, hi = min(closes), max(closes)
+    if hi == lo:
+        hi = lo + 1.0
+    pad = (hi - lo) * 0.08
+    lo, hi = lo - pad, hi + pad
+
+    n = len(closes)
+    def X(i):
+        return PL + (i / (n - 1)) * iw
+    def Y(v):
+        return PT + (1 - (v - lo) / (hi - lo)) * ih
+
+    pts = " ".join(f"{X(i):.1f},{Y(c):.1f}" for i, c in enumerate(closes))
+    area = f"{PL:.1f},{PT + ih:.1f} " + pts + f" {PL + iw:.1f},{PT + ih:.1f}"
+    up = closes[-1] >= closes[0]
+    stroke = "var(--green)" if up else "var(--red)"
+    fill = "var(--green-bg)" if up else "var(--red-bg)"
+
+    # horizontal gridlines with price labels
+    grid = ""
+    for f in (0, 0.25, 0.5, 0.75, 1):
+        v = lo + (hi - lo) * f
+        y = Y(v)
+        grid += (f'<line x1="{PL}" y1="{y:.1f}" x2="{PL + iw}" y2="{y:.1f}" '
+                 f'stroke="var(--border)" stroke-width="1"/>'
+                 f'<text x="{PL - 8}" y="{y + 3.5:.1f}" text-anchor="end" '
+                 f'font-size="10" fill="var(--hint)">{v:,.0f}</text>')
+
+    # date labels at start, middle and end
+    labels = ""
+    for i, anchor in ((0, "start"), (n // 2, "middle"), (n - 1, "end")):
+        if i < len(dates):
+            labels += (f'<text x="{X(i):.1f}" y="{H - 8}" text-anchor="{anchor}" '
+                       f'font-size="10" fill="var(--hint)">{dates[i][:7]}</text>')
+
+    return (f'<svg class="chart" viewBox="0 0 {W} {H}" width="100%" '
+            f'preserveAspectRatio="xMidYMid meet" role="img" '
+            f'aria-label="Two year price history">'
+            f'{grid}'
+            f'<polygon points="{area}" fill="{fill}"/>'
+            f'<polyline points="{pts}" fill="none" stroke="{stroke}" '
+            f'stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+            f'</svg>')
 
 
 def chart_growth(income):
@@ -317,7 +376,9 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .scard .pr{text-align:right;}.scard .pr .v{font-size:28px;font-weight:700;}.scard .pr .c{font-size:14px;font-weight:600;margin-top:2px;}
 .up{color:var(--green);}.down{color:var(--red);}
 .pillars{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin-top:18px;}
-.pillar{background:var(--surface2);border-radius:var(--r-sm);padding:11px 12px;flex:1 1 150px;min-width:140px;max-width:220px;box-sizing:border-box;}
+@media(max-width:820px){.pillar{flex:0 1 calc(33.333% - 6px);}}
+@media(max-width:520px){.pillar{flex:0 1 calc(50% - 5px);}}
+.pillar{background:var(--surface2);border-radius:var(--r-sm);padding:11px 12px;flex:0 1 calc(16.666% - 8px);min-width:132px;box-sizing:border-box;}
 .pillar .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;}
 .pillar .r{display:flex;align-items:center;gap:7px;margin-top:6px;}
 .dots{display:flex;gap:3px;}.dot{width:8px;height:8px;border-radius:50%;background:var(--border2);}
@@ -376,6 +437,8 @@ table.tbl td{padding:8px;border-bottom:1px solid var(--border);}table.tbl tr:las
 .badge{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:20px;}
 .badge.buy{background:var(--green-bg);color:var(--green);}.badge.sell{background:var(--red-bg);color:var(--red);}
 .badge.hold{background:var(--amber-bg);color:var(--amber);}
+.cons{font-weight:700;}.cons.buy{color:var(--green);}.cons.sell{color:var(--red);}.cons.hold{color:var(--amber);}
+.cons-n{font-size:12px;color:var(--hint);font-weight:500;}
 .note{font-size:13px;color:var(--muted);margin:14px 0 0;padding:13px 15px;background:var(--surface2);border-radius:var(--r-sm);}
 .note b{font-weight:600;color:var(--ink);}
 .cons-wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:6px 0 4px;}
@@ -672,7 +735,7 @@ def sec_price(info, stats, price_chart):
                      beta_status)
             + "</div>")
     if price_chart:
-        body += f'<img class="chart" src="{price_chart}" alt="2-year price chart">'
+        body += price_chart
     return section("price", "price", "Price & Momentum", "How the stock has moved over 2 years", None, body)
 
 
@@ -882,6 +945,44 @@ def _df_ok(df):
     return df is not None and hasattr(df, "empty") and not df.empty
 
 
+# SEC Form 4 transaction codes. The raw letters mean nothing to a reader,
+# so every code gets a plain-English label.
+FORM4_CODES = {
+    "P": ("Bought on open market", True),
+    "S": ("Sold on open market", False),
+    "A": ("Stock award or grant", True),
+    "M": ("Exercised options", True),
+    "X": ("Exercised options", True),
+    "C": ("Converted securities", True),
+    "G": ("Gift of shares", None),
+    "F": ("Shares withheld for taxes", None),
+    "D": ("Sold back to company", False),
+    "I": ("Discretionary transaction", None),
+    "J": ("Other transaction", None),
+    "K": ("Equity swap", None),
+    "L": ("Small acquisition", True),
+    "U": ("Shares tendered in buyout", False),
+    "W": ("Inherited or willed", None),
+    "Z": ("Voting trust transfer", None),
+}
+
+
+def form4_label(raw):
+    """Turn a Form 4 code (or an already-worded string) into readable text.
+    Returns (label, is_buy) where is_buy may be None for neutral events."""
+    t = str(raw or "").strip()
+    if not t:
+        return ("\u2014", None)
+    if len(t) <= 2 and t.upper() in FORM4_CODES:
+        return FORM4_CODES[t.upper()]
+    low = t.lower()
+    if any(w in low for w in ("purchase", "buy", "acqui", "exercise", "award", "grant")):
+        return (t, True)
+    if any(w in low for w in ("sale", "sold", "dispos")):
+        return (t, False)
+    return (t, None)
+
+
 def _badge_cls(grade_text):
     g = (grade_text or "").lower()
     if any(w in g for w in ["buy", "outperform", "overweight", "accumulate"]):
@@ -915,8 +1016,11 @@ def sec_people(info, data):
         head = "Wall Street's view" + (f" ({int(n_an)} analysts)" if isinstance(n_an, (int, float)) else "")
         body += f'<div class="sub-h">{esc(head)}</div><div class="mgrid">'
         if rec_label:
-            body += metric("Consensus rating", f'<span class="badge {_badge_cls(rec_label)}">{esc(rec_label)}</span>',
-                           "The blended buy/sell/hold call from analysts covering the stock.")
+            scale = f' <span class="cons-n">({rec_mean:.1f} of 5)</span>' if rec_mean else ""
+            body += metric("Consensus rating",
+                           f'<span class="cons {_badge_cls(rec_label)}">{esc(rec_label)}</span>{scale}',
+                           "The blended buy/sell/hold call from analysts covering the stock. "
+                           "The number is the average score, where 1 is Strong Buy and 5 is Sell.")
         if tgt_mean:
             body += metric("Avg price target", fmt_price(tgt_mean), "Where analysts on average expect the price to go over the next year.")
         if upside is not None:
@@ -997,16 +1101,16 @@ def sec_people(info, data):
         try:
             rows = ""
             for _, r in ins.head(6).iterrows():
-                txt = str(r.get("Text") or r.get("Transaction") or "")
-                is_buy = any(w in txt.lower() for w in ["purchase", "buy", "acqui", "exercise"])
+                txt, is_buy = form4_label(r.get("Text") or r.get("Transaction"))
                 name = esc(r.get("Insider", "—"))
                 sd = r.get("Start Date")
                 date = sd.strftime("%Y-%m-%d") if hasattr(sd, "strftime") else str(sd)[:10] if sd is not None else "—"
                 shares = r.get("Shares")
                 shares_s = f"{int(shares):,}" if isinstance(shares, (int, float)) and not (isinstance(shares, float) and math.isnan(shares)) else "—"
-                color = "var(--green)" if is_buy else "var(--muted)"
+                color = ("var(--green)" if is_buy else
+                         "var(--red)" if is_buy is False else "var(--muted)")
                 rows += (f'<tr><td>{date}</td><td>{name}</td>'
-                         f'<td style="font-size:12px;color:{color}">{esc(txt[:30])}</td><td>{shares_s}</td></tr>')
+                         f'<td style="font-size:12px;color:{color}">{esc(txt)}</td><td>{shares_s}</td></tr>')
             if rows:
                 body += ('<div class="sub-h">Recent insider trades '
                          + tip("Executives and directors trading their own stock. Buying often signals confidence; routine selling is normal.")
@@ -1235,11 +1339,42 @@ def sec_summary(info, stats, data):
                    open_default=True)
 
 
+def clean_exchange(raw):
+    """Finnhub returns things like 'NASDAQ NMS - GLOBAL MARKET'. Shorten it."""
+    t = str(raw or "").strip()
+    if not t:
+        return None
+    t = t.split(" - ")[0].strip()          # drop the ' - GLOBAL MARKET' tail
+    up = t.upper()
+    for needle, short in (("NASDAQ", "NASDAQ"), ("NEW YORK STOCK EXCHANGE", "NYSE"),
+                          ("NYSE", "NYSE"), ("AMEX", "NYSE American"),
+                          ("LONDON", "LSE"), ("TORONTO", "TSX")):
+        if needle in up:
+            return short
+    return t.title() if up == t else t
+
+
+def build_sub(info):
+    """Exchange, sector and industry, de-duplicated.
+    Finnhub uses one field for both sector and industry, so without this the
+    same word prints twice (Tesla showed 'Automobiles, Automobiles')."""
+    parts, seen = [], set()
+    for x in (clean_exchange(info.get("fullExchangeName") or info.get("exchange")),
+              info.get("sector"), info.get("industry")):
+        if not x:
+            continue
+        key = str(x).strip().lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        parts.append(str(x).strip())
+    return " \u00b7 ".join(parts)
+
+
 def build_scorecard(info, stats):
     name = info.get("longName") or info.get("shortName") or info.get("symbol") or ""
     ticker = info.get("symbol") or ""
-    sub = " \u00b7 ".join([x for x in [info.get("fullExchangeName") or info.get("exchange"),
-                                  info.get("sector"), info.get("industry")] if x])
+    sub = build_sub(info)
     price = numf(gi(info, "currentPrice")) or numf(gi(info, "regularMarketPrice")) \
         or (stats["last"] if stats else None) or numf(gi(info, "previousClose"))
     prev = numf(gi(info, "regularMarketPreviousClose")) or numf(gi(info, "previousClose"))
@@ -1249,9 +1384,8 @@ def build_scorecard(info, stats):
         chg_html = f'<div class="c {"up" if chg >= 0 else "down"}">{fmt_pct(chg)} today</div>'
 
     s = score_pillars(info, stats)
-    # Momentum dropped: it needs price history, which left with yfinance.
     order = [("Business", "biz"), ("Value", "val"), ("Health", "health"),
-             ("Growth", "growth"), ("Analysts", "smart")]
+             ("Growth", "growth"), ("Momentum", "mom"), ("Analysts", "smart")]
     pillars = ""
     for lbl, k in order:
         sc = s[k]

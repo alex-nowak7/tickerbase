@@ -43,15 +43,15 @@ LANDING_PAGE = f"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tickerbase — one-stop stock research</title>
+<title>Tickerbase, one-stop stock research</title>
 <style>{sl.CSS}{EXTRA_CSS}</style>
 </head>
 <body>
 <div class="wrap">
-  <div class="hero">
+  <div class="hero" id="hero">
     <div class="badge">{BADGE_SVG}</div>
     <h1>Tickerbase</h1>
-    <p class="tk">Type a ticker. See everything a serious investor weighs before buying — in plain English.</p>
+    <p class="tk">Type a ticker. See everything a serious investor weighs before buying, in plain English.</p>
   </div>
 
   <div class="search">
@@ -65,12 +65,12 @@ LANDING_PAGE = f"""<!DOCTYPE html>
   <div class="status" id="status"></div>
 
   <p class="intro" id="intro">Tickerbase pulls a company's business, valuation, financial health, growth, risk,
-  and what analysts &amp; insiders are doing — then sums it up with a plain-English verdict. It's an educational
+  and what analysts &amp; insiders are doing, then sums it up with a plain-English verdict. It's an educational
   research tool, not investment advice. Enter a ticker above to begin.</p>
 
   <div id="report"></div>
 
-  <div class="footer">Tickerbase · educational use only · data from Finnhub · not investment advice</div>
+  <div class="footer">Educational use only · not investment advice · data from Finnhub and Twelve Data</div>
 </div>
 
 <script>
@@ -84,6 +84,7 @@ async function analyze(t){{
   busy = true;
   $("goBtn").disabled = true;
   $("intro").style.display = "none";
+  $("hero").style.display = "none";
   $("report").innerHTML = "";
   setStatus('<span class="spin"></span>Loading ' + t + ' … (this can take a few seconds)');
   try {{
@@ -91,17 +92,19 @@ async function analyze(t){{
     const data = await res.json();
     if(data.ok){{
       $("report").innerHTML = data.html;
-      setStatus(data.partial ? "Loaded — a few optional fields were unavailable, the rest is shown below."
+      setStatus(data.partial ? "Loaded, a few optional fields were unavailable, the rest is shown below."
                              : (data.cached ? "" : ""));
       // scroll the report into view on small screens
       $("report").scrollIntoView({{behavior:"smooth", block:"start"}});
     }} else {{
       setStatus(data.error || "Something went wrong. Please try again.", true);
       $("intro").style.display = "block";
+      $("hero").style.display = "";
     }}
   }} catch(e) {{
     setStatus("Couldn't reach the server. Check your connection and try again.", true);
     $("intro").style.display = "block";
+    $("hero").style.display = "";
   }} finally {{
     busy = false;
     $("goBtn").disabled = false;
