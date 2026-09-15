@@ -25,7 +25,7 @@ SYMBOLS_TTL = 24 * 60 * 60   # ticker-validity cache, seconds
 # Bump this whenever the report's shape or data mapping changes. It is part of
 # the cache key, so old cached reports are ignored instead of being served by a
 # newly deployed Worker. Deploys do not clear KV on their own.
-CACHE_VERSION = "v2"
+CACHE_VERSION = "v7"
 
 
 def _env(request):
@@ -142,6 +142,7 @@ async def analyze(request: Request, ticker: str = "", fresh: int = 0):
     return JSONResponse({"ok": False, "ticker": t,
                          "error": result.get("error", "Unknown error.")},
                         status_code=200)
+
 
 
 
