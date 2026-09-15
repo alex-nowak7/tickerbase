@@ -276,31 +276,45 @@ _ACCENT = "#2a6df4"
 _GREEN = "#1f8a4c"
 
 
-def chart_price(stats):
-    """Render the 2-year close series as inline SVG.
+def _nice_price(v):
+    """Compact axis label: 1.2K for big numbers, 2 decimals for penny stocks."""
+    a = abs(v)
+    if a >= 1000:
+        return f"${v/1000:,.1f}K"
+    if a >= 10:
+        return f"${v:,.0f}"
+    return f"${v:,.2f}"
 
-    Pure Python, no dependencies, ~2KB on the wire instead of a base64 PNG,
-    and it stays sharp at any zoom."""
+
+def chart_price(stats):
+    """2-year price history as an interactive inline SVG.
+
+    Hovering any point shows a crosshair, a marker and an exact price/date
+    label. The interaction is pure CSS, which matters: the report is injected
+    with innerHTML, and <script> tags inserted that way never execute.
+    """
     if not stats:
         return None
     closes = stats.get("closes") or []
     dates = stats.get("dates") or []
-    if len(closes) < 20:
+    if len(closes) < 20 or len(dates) != len(closes):
         return None
 
-    W, H = 720, 240
-    PL, PR, PT, PB = 52, 14, 14, 26        # padding: left, right, top, bottom
+    W, H = 760, 320
+    PL, PR, PT, PB = 62, 16, 18, 46          # left, right, top, bottom padding
     iw, ih = W - PL - PR, H - PT - PB
 
     lo, hi = min(closes), max(closes)
     if hi == lo:
         hi = lo + 1.0
-    pad = (hi - lo) * 0.08
+    pad = (hi - lo) * 0.10
     lo, hi = lo - pad, hi + pad
 
     n = len(closes)
+
     def X(i):
         return PL + (i / (n - 1)) * iw
+
     def Y(v):
         return PT + (1 - (v - lo) / (hi - lo)) * ih
 
@@ -310,31 +324,73 @@ def chart_price(stats):
     stroke = "var(--green)" if up else "var(--red)"
     fill = "var(--green-bg)" if up else "var(--red-bg)"
 
-    # horizontal gridlines with price labels
+    # ---- y axis: 5 gridlines with price labels ----
     grid = ""
     for f in (0, 0.25, 0.5, 0.75, 1):
         v = lo + (hi - lo) * f
         y = Y(v)
         grid += (f'<line x1="{PL}" y1="{y:.1f}" x2="{PL + iw}" y2="{y:.1f}" '
-                 f'stroke="var(--border)" stroke-width="1"/>'
-                 f'<text x="{PL - 8}" y="{y + 3.5:.1f}" text-anchor="end" '
-                 f'font-size="10" fill="var(--hint)">{v:,.0f}</text>')
+                 f'class="cg"/>'
+                 f'<text x="{PL - 10}" y="{y + 3.5:.1f}" text-anchor="end" '
+                 f'class="cl">{esc(_nice_price(v))}</text>')
 
-    # date labels at start, middle and end
-    labels = ""
-    for i, anchor in ((0, "start"), (n // 2, "middle"), (n - 1, "end")):
-        if i < len(dates):
-            labels += (f'<text x="{X(i):.1f}" y="{H - 8}" text-anchor="{anchor}" '
-                       f'font-size="10" fill="var(--hint)">{dates[i][:7]}</text>')
+    # ---- x axis: a tick wherever the year changes, plus the first and last ----
+    axis = (f'<line x1="{PL}" y1="{PT + ih:.1f}" x2="{PL + iw}" y2="{PT + ih:.1f}" class="ca"/>'
+            f'<line x1="{PL}" y1="{PT}" x2="{PL}" y2="{PT + ih:.1f}" class="ca"/>')
+    marks, seen_years = [], set()
+    for i, d in enumerate(dates):
+        yr = str(d)[:4]
+        if yr not in seen_years:
+            seen_years.add(yr)
+            marks.append((i, yr))
+    if marks and marks[0][0] > 0:
+        marks.insert(0, (0, str(dates[0])[:4]))
+    for i, yr in marks:
+        x = X(i)
+        anchor = "start" if x < PL + 24 else ("end" if x > PL + iw - 24 else "middle")
+        axis += (f'<line x1="{x:.1f}" y1="{PT + ih:.1f}" x2="{x:.1f}" y2="{PT + ih + 5:.1f}" class="ca"/>'
+                 f'<text x="{x:.1f}" y="{PT + ih + 19:.1f}" text-anchor="{anchor}" class="cl">{esc(yr)}</text>')
+
+    # ---- axis captions, so the reader never has to guess the units ----
+    caps = (f'<text x="{PL - 48}" y="{PT + ih / 2:.1f}" class="cax" '
+            f'transform="rotate(-90 {PL - 48} {PT + ih / 2:.1f})" text-anchor="middle">Price (USD)</text>'
+            f'<text x="{PL + iw / 2:.1f}" y="{H - 5}" class="cax" text-anchor="middle">Year</text>')
+
+    # ---- hover targets: one invisible strip per sampled point ----
+    step = max(1, n // 130)
+    idxs = list(range(0, n, step))
+    if idxs[-1] != n - 1:
+        idxs.append(n - 1)
+    sw = iw / max(1, len(idxs) - 1)
+    hits = ""
+    for k, i in enumerate(idxs):
+        x, y, c = X(i), Y(closes[i]), closes[i]
+        rx = max(PL, x - sw / 2)
+        label = f"{esc(str(dates[i]))}  \u00b7  ${c:,.2f}"
+        # keep the label box inside the frame at both ends
+        if x < PL + 90:
+            tx, anchor = x + 10, "start"
+        elif x > PL + iw - 90:
+            tx, anchor = x - 10, "end"
+        else:
+            tx, anchor = x, "middle"
+        hits += (f'<g class="chit">'
+                 f'<rect x="{rx:.1f}" y="{PT}" width="{sw:.2f}" height="{ih:.1f}" fill="transparent"/>'
+                 f'<g class="ctip">'
+                 f'<line x1="{x:.1f}" y1="{PT}" x2="{x:.1f}" y2="{PT + ih:.1f}" class="cx"/>'
+                 f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.5" class="cdot" style="fill:{stroke}"/>'
+                 f'<text x="{tx:.1f}" y="{PT + 13:.1f}" text-anchor="{anchor}" class="cval">{label}</text>'
+                 f'</g></g>')
 
     return (f'<svg class="chart" viewBox="0 0 {W} {H}" width="100%" '
             f'preserveAspectRatio="xMidYMid meet" role="img" '
-            f'aria-label="Two year price history">'
-            f'{grid}'
+            f'aria-label="Two year price history, hover for exact prices">'
+            f'{grid}{axis}{caps}'
             f'<polygon points="{area}" fill="{fill}"/>'
             f'<polyline points="{pts}" fill="none" stroke="{stroke}" '
             f'stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
-            f'</svg>')
+            f'{hits}</svg>'
+            f'<p class="chint">Hover or tap the chart for the exact price on any day.</p>')
 
 
 def chart_growth(income):
@@ -436,7 +492,18 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .m:nth-child(3n) .tip .tt,.m:last-child .tip .tt{left:auto;right:0;}
 .tip:hover .tt{visibility:visible;opacity:1;}
 .sub-h{font-size:14px;font-weight:600;margin:20px 0 10px;}.sub-h:first-child{margin-top:0;}
-img.chart{width:100%;border-radius:var(--r-sm);margin-top:6px;}
+svg.chart{width:100%;height:auto;border-radius:var(--r-sm);margin:10px 0 2px;display:block;
+  background:var(--surface2);padding:8px 4px;}
+.chart .cg{stroke:var(--border);stroke-width:1;}
+.chart .ca{stroke:var(--border2);stroke-width:1;}
+.chart .cl{font-size:10.5px;fill:var(--hint);font-variant-numeric:tabular-nums;}
+.chart .cax{font-size:10.5px;fill:var(--muted);font-weight:600;letter-spacing:.04em;}
+.chart .ctip{opacity:0;transition:opacity .08s ease;pointer-events:none;}
+.chart .chit:hover .ctip,.chart .chit:focus .ctip{opacity:1;}
+.chart .cx{stroke:var(--border2);stroke-width:1;stroke-dasharray:3 3;}
+.chart .cdot{stroke:var(--surface);stroke-width:2;}
+.chart .cval{font-size:11.5px;font-weight:600;fill:var(--ink);font-variant-numeric:tabular-nums;}
+.chint{font-size:11.5px;color:var(--hint);margin:0 0 14px;text-align:center;}
 table.tbl{width:100%;border-collapse:collapse;font-size:13.5px;}
 table.tbl th{text-align:left;color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;
   letter-spacing:.03em;padding:7px 8px;border-bottom:1px solid var(--border);}
