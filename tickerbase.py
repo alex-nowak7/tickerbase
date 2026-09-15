@@ -323,15 +323,22 @@ def chart_price(stats):
     PL, PR, PT, PB = 62, 16, 18, 46          # left, right, top, bottom padding
     iw, ih = W - PL - PR, H - PT - PB
 
-    # Zero-based axis with round increments, so the ticks are numbers a reader
-    # recognises ($0 / $50 / $100 ...) rather than whatever the data happened to
-    # span. The top is rounded up to the next whole step.
-    peak = max(closes)
-    step = _nice_step(peak, target_ticks=5)
-    lo = 0.0
-    hi = math.ceil(peak / step) * step
+    # Axis fitted to the data with round increments, the convention every
+    # brokerage and terminal uses for price lines. Zero-basing a price chart
+    # wastes most of the frame and makes a stock that doubled look flat.
+    # The range is padded a little, then snapped out to whole steps so the
+    # labels are still numbers a person would pick.
+    low, peak = min(closes), max(closes)
+    span = peak - low
+    if span <= 0:
+        span = max(abs(peak) * 0.02, 0.01)
+    pad = span * 0.04
+    step = _nice_step(span + 2 * pad, target_ticks=7)
+    lo = math.floor((low - pad) / step) * step
+    hi = math.ceil((peak + pad) / step) * step
+    lo = max(0.0, lo)                      # a price axis never goes negative
     if hi <= lo:
-        hi = step
+        hi = lo + step
     ticks = []
     v = lo
     while v <= hi + step * 1e-9:

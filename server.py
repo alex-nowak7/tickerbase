@@ -143,3 +143,4 @@ async def analyze(request: Request, ticker: str = "", fresh: int = 0):
                          "error": result.get("error", "Unknown error.")},
                         status_code=200)
 
+
