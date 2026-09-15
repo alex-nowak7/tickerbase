@@ -492,3 +492,23 @@ def get_peer_data(info):
 
     return {"name": industry, "medians": medians,
             "n": max(len(v) for v in vals.values()), "tickers": peers}
+
+
+# ============================================================
+#  get_listed_symbols - the universe of tradable US tickers
+# ============================================================
+def get_listed_symbols():
+    """Every currently listed US symbol, as a set. Returns None on failure so
+    callers can tell 'lookup failed' apart from 'nothing is listed'.
+
+    One call covers the whole market, which is why the result is cached for a
+    day rather than fetched per visitor."""
+    rows = _get("/stock/symbol", {"exchange": "US"})
+    if not rows or not isinstance(rows, list):
+        return None
+    out = set()
+    for r in rows:
+        sym = (r or {}).get("symbol")
+        if sym:
+            out.add(str(sym).upper())
+    return out or None

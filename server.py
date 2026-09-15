@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tickerbase - web backend (Cloudflare Workers edition).
 
 Changes from the Render version:
@@ -19,12 +19,13 @@ from landing import LANDING_PAGE
 
 app = FastAPI(title="Tickerbase")
 
-CACHE_TTL = 15 * 60  # seconds
+CACHE_TTL = 15 * 60          # report cache, seconds
+SYMBOLS_TTL = 24 * 60 * 60   # ticker-validity cache, seconds
 
 # Bump this whenever the report's shape or data mapping changes. It is part of
 # the cache key, so old cached reports are ignored instead of being served by a
 # newly deployed Worker. Deploys do not clear KV on their own.
-CACHE_VERSION = "v4"
+CACHE_VERSION = "v2"
 
 
 def _env(request):
@@ -65,6 +66,47 @@ async def health():
     return "ok"
 
 
+@app.get("/validate")
+async def validate(request: Request, tickers: str = ""):
+    """Return which of the given tickers are still listed in the US.
+
+    The landing page calls this once on load to hide chips for companies that
+    have merged, delisted or been renamed, so the category lists stay correct
+    without anyone maintaining them.
+
+    Only the small answer is cached, not the ~25,000-symbol universe: reparsing
+    that on every request would blow the Worker's CPU budget.
+    """
+    wanted = [x.strip().upper() for x in (tickers or "").split(",") if x.strip()]
+    if not wanted:
+        return JSONResponse({"valid": [], "checked": False})
+
+    env = _env(request)
+    key = "symok:" + str(abs(hash(",".join(sorted(wanted)))))
+
+    if env is not None:
+        try:
+            raw = await env.CACHE.get(key)
+            if raw:
+                return JSONResponse({"valid": json.loads(raw), "checked": True, "cached": True})
+        except Exception:
+            pass
+
+    universe = finnhub_client.get_listed_symbols()
+    if not universe:
+        # Lookup failed. Say so rather than hiding every chip.
+        return JSONResponse({"valid": wanted, "checked": False})
+
+    valid = [t for t in wanted if t in universe or t.replace("-", ".") in universe]
+
+    if env is not None:
+        try:
+            await env.CACHE.put(key, json.dumps(valid), expirationTtl=SYMBOLS_TTL)
+        except Exception:
+            pass
+    return JSONResponse({"valid": valid, "checked": True, "cached": False})
+
+
 @app.get("/debug")
 async def debug(request: Request, ticker: str = "AAPL"):
     """Raw field dump. Lets us see exactly what the live Worker computed
@@ -100,6 +142,3 @@ async def analyze(request: Request, ticker: str = "", fresh: int = 0):
     return JSONResponse({"ok": False, "ticker": t,
                          "error": result.get("error", "Unknown error.")},
                         status_code=200)
-
-
-

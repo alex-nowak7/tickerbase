@@ -490,7 +490,14 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .tip .tt b{font-weight:700;}
 /* flip tooltip to the right edge for cards near the right side */
 .m:nth-child(3n) .tip .tt,.m:last-child .tip .tt{left:auto;right:0;}
-.tip:hover .tt{visibility:visible;opacity:1;}
+.tip:hover .tt,.tip.on .tt{visibility:visible;opacity:1;}
+.tip .info{cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+/* Bigger tap target on touch devices without changing the visual size. */
+@media(hover:none){
+  .tip .info{position:relative;}
+  .tip .info::after{content:"";position:absolute;top:-10px;left:-10px;right:-10px;bottom:-10px;}
+  .tip .tt{left:auto;right:0;max-width:min(78vw,300px);}
+}
 .sub-h{font-size:14px;font-weight:600;margin:20px 0 10px;}.sub-h:first-child{margin-top:0;}
 svg.chart{width:100%;height:auto;border-radius:var(--r-sm);margin:10px 0 2px;display:block;
   background:var(--surface2);padding:8px 4px;}
@@ -499,7 +506,8 @@ svg.chart{width:100%;height:auto;border-radius:var(--r-sm);margin:10px 0 2px;dis
 .chart .cl{font-size:10.5px;fill:var(--hint);font-variant-numeric:tabular-nums;}
 .chart .cax{font-size:10.5px;fill:var(--muted);font-weight:600;letter-spacing:.04em;}
 .chart .ctip{opacity:0;transition:opacity .08s ease;pointer-events:none;}
-.chart .chit:hover .ctip,.chart .chit:focus .ctip{opacity:1;}
+.chart .chit:hover .ctip,.chart .chit.on .ctip{opacity:1;}
+.chart .chit{cursor:crosshair;-webkit-tap-highlight-color:transparent;}
 .chart .cx{stroke:var(--border2);stroke-width:1;stroke-dasharray:3 3;}
 .chart .cdot{stroke:var(--surface);stroke-width:2;}
 .chart .cval{font-size:11.5px;font-weight:600;fill:var(--ink);font-variant-numeric:tabular-nums;}

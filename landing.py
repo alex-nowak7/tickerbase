@@ -46,6 +46,8 @@ EXTRA_CSS = """
   background:var(--surface2);color:var(--ink);border:1px solid var(--border);
   transition:background .12s ease,border-color .12s ease;font-variant-numeric:tabular-nums;}
 .tchip:hover{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+.sgroup.gone{display:none;}
+.tchip.gone{display:none;}
 .sdisc{font-size:11.5px;color:var(--hint);text-align:center;margin:16px 0 0;line-height:1.6;}
 .intro{max-width:620px;margin:18px auto 0;text-align:center;color:var(--muted);font-size:14px;line-height:1.6;}
 #report{margin-top:24px;}
@@ -91,7 +93,7 @@ LANDING_PAGE = f"""<!DOCTYPE html>
     <div class="sgroup"><h4>Consumer staples &amp; retail</h4><p>Slower, steadier businesses. Useful contrast to tech: thin margins, low growth, durable demand.</p><div class="chips"><span class="tchip" data-t="COST">COST</span><span class="tchip" data-t="WMT">WMT</span><span class="tchip" data-t="KO">KO</span><span class="tchip" data-t="PG">PG</span><span class="tchip" data-t="NKE">NKE</span><span class="tchip" data-t="SBUX">SBUX</span></div></div>
     <div class="sgroup"><h4>Higher growth, higher risk</h4><p>Smaller and newer companies growing fast, often not yet consistently profitable. Far more volatile, and the metrics here are noisier.</p><div class="chips"><span class="tchip" data-t="RBRK">RBRK</span><span class="tchip" data-t="SNOW">SNOW</span><span class="tchip" data-t="DDOG">DDOG</span><span class="tchip" data-t="CRWD">CRWD</span><span class="tchip" data-t="NET">NET</span><span class="tchip" data-t="PLTR">PLTR</span><span class="tchip" data-t="HOOD">HOOD</span><span class="tchip" data-t="SOFI">SOFI</span></div></div>
     <p class="sdisc">These are common starting points for research, grouped by category, not picks or predictions.
-    Tickerbase does not rank or recommend stocks. Listings may go stale as companies merge, delist or change names.</p>
+    Tickerbase does not rank or recommend stocks. This list checks itself daily against currently listed US tickers, so delisted companies drop off on their own.</p>
   </details>
 
   <p class="intro" id="intro">Tickerbase pulls a company's business, valuation, financial health, growth, risk,
@@ -152,6 +154,72 @@ $("goBtn").onclick = () => analyze();
 $("ticker").addEventListener("keydown", e => {{ if(e.key === "Enter") analyze(); }});
 document.querySelectorAll(".examples span, .tchip").forEach(b =>
   b.onclick = () => {{ $("ticker").value = b.dataset.t; analyze(b.dataset.t); }});
+
+// ---- keep the category lists honest ---------------------------------
+// Companies merge, delist and get renamed. Rather than maintaining this list
+// by hand, ask the server once per load which tickers are still listed and
+// hide the ones that are not. The answer is cached server-side for a day, so
+// this costs one upstream API call every 24 hours, not one per visitor.
+(async function validateChips(){{
+  const chips = Array.from(document.querySelectorAll(".tchip"));
+  if(!chips.length) return;
+  const symbols = [...new Set(chips.map(c => c.dataset.t))];
+  try {{
+    const res = await fetch("/validate?tickers=" + encodeURIComponent(symbols.join(",")));
+    const data = await res.json();
+    if(!data.checked) return;            // lookup failed: leave everything visible
+    const ok = new Set(data.valid || []);
+    chips.forEach(c => {{ if(!ok.has(c.dataset.t)) c.classList.add("gone"); }});
+    // hide any category left with nothing in it
+    document.querySelectorAll(".sgroup").forEach(g => {{
+      if(!g.querySelector(".tchip:not(.gone)")) g.classList.add("gone");
+    }});
+  }} catch(e) {{ /* offline or blocked: the chips simply stay as they are */ }}
+}})();
+
+// ---- touch support -------------------------------------------------
+// The report is injected with innerHTML, so any <script> inside it never
+// runs. These listeners live on the document instead and therefore also
+// work for content added later. :hover is unreliable on touch screens,
+// so tapping toggles an .on class that the CSS keys off as well.
+function closeAll(except){{
+  document.querySelectorAll(".tip.on").forEach(el => {{ if(el !== except) el.classList.remove("on"); }});
+  document.querySelectorAll(".chart .chit.on").forEach(el => el.classList.remove("on"));
+}}
+
+document.addEventListener("click", e => {{
+  // the little "i" badge next to a metric
+  const info = e.target.closest ? e.target.closest(".tip") : null;
+  if(info){{
+    e.preventDefault();
+    const wasOpen = info.classList.contains("on");
+    closeAll(info);
+    info.classList.toggle("on", !wasOpen);
+    return;
+  }}
+  // a point on the price chart
+  const hit = e.target.closest ? e.target.closest(".chit") : null;
+  if(hit){{
+    const wasOpen = hit.classList.contains("on");
+    closeAll();
+    if(!wasOpen) hit.classList.add("on");
+    return;
+  }}
+  closeAll();
+}});
+
+// dragging a finger across the chart should track, like hovering does
+document.addEventListener("touchmove", e => {{
+  const t = e.touches && e.touches[0];
+  if(!t) return;
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const hit = el && el.closest ? el.closest(".chit") : null;
+  if(!hit) return;
+  document.querySelectorAll(".chart .chit.on").forEach(x => x.classList.remove("on"));
+  hit.classList.add("on");
+}}, {{passive: true}});
+
+document.addEventListener("keydown", e => {{ if(e.key === "Escape") closeAll(); }});
 
 // allow deep links like /?t=AAPL
 const qs = new URLSearchParams(location.search).get("t");
