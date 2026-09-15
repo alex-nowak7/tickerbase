@@ -276,13 +276,32 @@ _ACCENT = "#2a6df4"
 _GREEN = "#1f8a4c"
 
 
-def _nice_price(v):
-    """Compact axis label: 1.2K for big numbers, 2 decimals for penny stocks."""
-    a = abs(v)
-    if a >= 1000:
+def _nice_step(span, target_ticks=5):
+    """Round axis increment: 1, 2, 2.5 or 5 times a power of ten.
+
+    A $30 stock gets $10 steps, a $500 stock gets $100 steps, and the numbers
+    on the axis are always ones a person would actually choose."""
+    if span <= 0:
+        return 1.0
+    raw = span / max(1, target_ticks)
+    mag = 10 ** math.floor(math.log10(raw))
+    for mult in (1, 2, 2.5, 5, 10):
+        if raw <= mult * mag:
+            return mult * mag
+    return 10 * mag
+
+
+def _nice_price(v, step=1.0):
+    """Axis label, formatted to match the tick spacing so every label on the
+    axis carries the same number of decimals."""
+    if abs(v) < 1e-9:
+        return "$0"
+    if step >= 1000:
         return f"${v/1000:,.1f}K"
-    if a >= 10:
+    if step >= 1:
         return f"${v:,.0f}"
+    if step >= 0.1:
+        return f"${v:,.1f}"
     return f"${v:,.2f}"
 
 
@@ -304,11 +323,20 @@ def chart_price(stats):
     PL, PR, PT, PB = 62, 16, 18, 46          # left, right, top, bottom padding
     iw, ih = W - PL - PR, H - PT - PB
 
-    lo, hi = min(closes), max(closes)
-    if hi == lo:
-        hi = lo + 1.0
-    pad = (hi - lo) * 0.10
-    lo, hi = lo - pad, hi + pad
+    # Zero-based axis with round increments, so the ticks are numbers a reader
+    # recognises ($0 / $50 / $100 ...) rather than whatever the data happened to
+    # span. The top is rounded up to the next whole step.
+    peak = max(closes)
+    step = _nice_step(peak, target_ticks=5)
+    lo = 0.0
+    hi = math.ceil(peak / step) * step
+    if hi <= lo:
+        hi = step
+    ticks = []
+    v = lo
+    while v <= hi + step * 1e-9:
+        ticks.append(v)
+        v += step
 
     n = len(closes)
 
@@ -326,13 +354,12 @@ def chart_price(stats):
 
     # ---- y axis: 5 gridlines with price labels ----
     grid = ""
-    for f in (0, 0.25, 0.5, 0.75, 1):
-        v = lo + (hi - lo) * f
+    for v in ticks:
         y = Y(v)
         grid += (f'<line x1="{PL}" y1="{y:.1f}" x2="{PL + iw}" y2="{y:.1f}" '
                  f'class="cg"/>'
                  f'<text x="{PL - 10}" y="{y + 3.5:.1f}" text-anchor="end" '
-                 f'class="cl">{esc(_nice_price(v))}</text>')
+                 f'class="cl">{esc(_nice_price(v, step))}</text>')
 
     # ---- x axis: a tick wherever the year changes, plus the first and last ----
     axis = (f'<line x1="{PL}" y1="{PT + ih:.1f}" x2="{PL + iw}" y2="{PT + ih:.1f}" class="ca"/>'
@@ -496,7 +523,12 @@ body{margin:0;background:var(--bg);color:var(--ink);
 @media(hover:none){
   .tip .info{position:relative;}
   .tip .info::after{content:"";position:absolute;top:-10px;left:-10px;right:-10px;bottom:-10px;}
-  .tip .tt{left:auto;right:0;max-width:min(78vw,300px);}
+  /* Anchoring to the badge overflows the screen whenever the badge sits near an
+     edge. Pin it to the viewport instead: always fully visible, never clipped. */
+  .tip .tt{position:fixed;left:14px;right:14px;bottom:16px;top:auto;
+    width:auto;max-width:none;max-height:46vh;overflow-y:auto;
+    padding:16px 18px;font-size:13.5px;line-height:1.6;border-radius:14px;
+    box-shadow:0 8px 28px rgba(0,0,0,.22);z-index:60;}
 }
 .sub-h{font-size:14px;font-weight:600;margin:20px 0 10px;}.sub-h:first-child{margin-top:0;}
 svg.chart{width:100%;height:auto;border-radius:var(--r-sm);margin:10px 0 2px;display:block;

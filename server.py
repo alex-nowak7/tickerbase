@@ -1,4 +1,4 @@
-"""
+﻿"""
 Tickerbase - web backend (Cloudflare Workers edition).
 
 Changes from the Render version:
@@ -142,3 +142,4 @@ async def analyze(request: Request, ticker: str = "", fresh: int = 0):
     return JSONResponse({"ok": False, "ticker": t,
                          "error": result.get("error", "Unknown error.")},
                         status_code=200)
+
