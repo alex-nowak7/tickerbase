@@ -358,9 +358,14 @@ CSS = """
   --accent:#6fa0ff;--accent-bg:#13294d;--green:#74c98a;--green-bg:#1d3b28;
   --red:#f1908f;--red-bg:#3f1c1c;--amber:#e3a64a;--amber-bg:#3d2c10;}}
 *{box-sizing:border-box}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  line-height:1.55;-webkit-font-smoothing:antialiased;}
+  font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.55;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+/* Line numerals up in columns and stop digits from shifting width. */
+.mv,.pr .v,.pr .c,.gr,table td,table th,.cons-n{font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;}
 .wrap{max-width:920px;margin:0 auto;padding:0 20px 90px;}
 .hero{text-align:center;padding:46px 0 22px;}
 .hero .badge{width:74px;height:74px;border-radius:50%;background:var(--accent);display:flex;
@@ -369,16 +374,16 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .hero h1{font-size:30px;font-weight:700;margin:0;letter-spacing:-.02em;}
 .hero .tk{color:var(--muted);font-size:15px;margin:8px 0 0;}
 .hero .stamp{color:var(--hint);font-size:12px;margin:4px 0 0;}
-.scard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;margin-bottom:18px;}
+.scard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:26px;margin-bottom:20px;box-shadow:0 1px 2px rgba(0,0,0,.04);}
 .scard .top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;}
-.scard .nm{font-size:22px;font-weight:700;margin:0;letter-spacing:-.01em;}
+.scard .nm{font-size:23px;font-weight:700;margin:0;letter-spacing:-.02em;}
 .scard .sub{color:var(--muted);font-size:13.5px;margin:3px 0 0;}
-.scard .pr{text-align:right;}.scard .pr .v{font-size:28px;font-weight:700;}.scard .pr .c{font-size:14px;font-weight:600;margin-top:2px;}
+.scard .pr{text-align:right;}.scard .pr .v{font-size:30px;font-weight:700;letter-spacing:-.02em;}.scard .pr .c{font-size:14px;font-weight:600;margin-top:2px;}
 .up{color:var(--green);}.down{color:var(--red);}
-.pillars{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin-top:18px;}
-@media(max-width:820px){.pillar{flex:0 1 calc(33.333% - 6px);}}
-@media(max-width:520px){.pillar{flex:0 1 calc(50% - 5px);}}
-.pillar{background:var(--surface2);border-radius:var(--r-sm);padding:11px 12px;flex:0 1 calc(16.666% - 8px);min-width:132px;box-sizing:border-box;}
+.pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;}
+@media(max-width:520px){.pillars{grid-template-columns:repeat(2,1fr);}}
+.pillar{background:var(--surface2);border-radius:var(--r-sm);padding:12px 14px;box-sizing:border-box;transition:background .15s ease;}
+.pillar:hover{background:var(--accent-bg);}
 .pillar .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;}
 .pillar .r{display:flex;align-items:center;gap:7px;margin-top:6px;}
 .dots{display:flex;gap:3px;}.dot{width:8px;height:8px;border-radius:50%;background:var(--border2);}
@@ -390,7 +395,8 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .controls button{font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:20px;border:1px solid var(--border2);
   background:transparent;color:var(--muted);cursor:pointer;}
 .controls button:hover{background:var(--surface2);color:var(--ink);}
-.sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:visible;}
+.sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:visible;transition:border-color .15s ease,box-shadow .15s ease;}
+.sec:hover{border-color:var(--border2);box-shadow:0 1px 3px rgba(0,0,0,.05);}
 .sec-head{display:flex;align-items:center;gap:13px;padding:17px 20px;cursor:pointer;user-select:none;
   border-radius:var(--r);transition:background .12s;}
 .sec-head:hover{background:var(--accent-bg);}
@@ -404,10 +410,11 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .sec.open .chev{transform:rotate(180deg);}
 .sec-body{display:none;padding:0 20px 20px;}.sec.open .sec-body{display:block;}
 /* symmetric grid: equal columns, equal heights */
-.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-items:stretch;}
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;align-items:stretch;}
 @media(max-width:760px){.mgrid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:460px){.mgrid{grid-template-columns:1fr;}}
-.m{background:var(--surface2);border-radius:var(--r-sm);padding:13px 14px;display:flex;flex-direction:column;min-height:108px;}
+.m{background:var(--surface2);border-radius:var(--r-sm);padding:14px 15px;display:flex;flex-direction:column;min-height:108px;transition:background .15s ease;}
+.m:hover{background:var(--accent-bg);}
 .m .ml{font-size:12px;color:var(--muted);display:flex;align-items:flex-start;gap:5px;line-height:1.3;min-height:32px;}
 .m .mv{font-size:19px;font-weight:600;margin-top:auto;padding-top:6px;}
 .pill-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:7px;}
@@ -654,11 +661,6 @@ def sec_business(info):
         return section("business", "business", "The Business", "Data Unavailable",
                        ("n", "no data"), '<div class="empty"><span><b>Company profile didn\'t load.</b></span></div>')
     desc = info.get("longBusinessSummary") or "No description available."
-    ceo = ""
-    for off in (info.get("companyOfficers") or []):
-        if off.get("title") and ("CEO" in off["title"] or "Chief Executive" in off["title"]):
-            ceo = off.get("name", "")
-            break
     emp = info.get("fullTimeEmployees")
     # full description, clamped to 4 lines with a Show more / Show less toggle
     long_enough = len(desc) > 320
@@ -681,9 +683,9 @@ def sec_business(info):
             + metric("Employees", f"{emp:,}" if isinstance(emp, (int, float)) else "—",
                      tip2("Full-time headcount.",
                           "Mainly a scale indicator. Revenue-per-employee (not shown) can hint at efficiency, but headcount alone isn't good or bad."))
-            + metric("CEO", esc(ceo or "—"),
-                     tip2("The chief executive who runs the company day to day.",
-                          "Long-tenured, founder, or large-shareholder CEOs are often seen as a positive for alignment with shareholders."))
+            + metric("Revenue / employee", fmt_usd(info.get("revenuePerEmployee")),
+                     tip2("Annual revenue divided by headcount, a quick read on how much output each person generates.",
+                          "Software and semiconductors often clear $500K+; retail and restaurants run far lower. Compare within an industry, never across."))
             + metric("Country", esc(info.get("country") or "—"),
                      tip2("Where the company is headquartered.",
                           "Affects which accounting rules, taxes, and currency risks apply."))

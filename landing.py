@@ -16,22 +16,24 @@ EXTRA_CSS = """
   letter-spacing:.06em;font-weight:600;text-align:center;transition:.15s;}
 .search input::placeholder{font-weight:400;letter-spacing:.02em;color:var(--hint);text-transform:none;}
 .search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-bg);}
-.search button{font-size:16px;font-weight:600;padding:14px 30px;border-radius:var(--r);border:none;
-  background:var(--accent);color:#fff;cursor:pointer;transition:.12s;}
+.search input:hover{border-color:var(--border2);}
+.search button{font-size:16px;font-weight:600;padding:14px 32px;border-radius:var(--r);border:none;
+  background:var(--accent);color:#fff;cursor:pointer;transition:filter .12s ease,transform .08s ease;
+  box-shadow:0 1px 2px rgba(0,0,0,.08);}
 .search button:hover{filter:brightness(1.08);}.search button:active{transform:scale(.97);}
 .search button:disabled{opacity:.55;cursor:default;}
 .examples{text-align:center;font-size:13px;color:var(--hint);margin:0 0 10px;}
-.examples span{color:var(--accent);cursor:pointer;font-weight:600;margin:0 5px;}
-.examples span:hover{text-decoration:underline;}
+.examples span{color:var(--accent);cursor:pointer;font-weight:600;margin:0 5px;padding:2px 4px;border-radius:5px;transition:background .12s ease;}
+.examples span:hover{background:var(--accent-bg);text-decoration:none;}
 .status{max-width:680px;margin:6px auto 0;font-size:14px;color:var(--muted);text-align:center;min-height:22px;padding:0 8px;}
 .status.err{color:var(--red);}
 .spin{display:inline-block;width:15px;height:15px;border:2px solid var(--border2);border-top-color:var(--accent);
   border-radius:50%;animation:sp .7s linear infinite;vertical-align:-3px;margin-right:8px;}
 @keyframes sp{to{transform:rotate(360deg)}}
-.report-meta{text-align:center;font-size:12px;color:var(--hint);margin:10px 0 18px;}
+.report-meta{text-align:center;font-size:12px;color:var(--hint);margin:14px 0 20px;font-variant-numeric:tabular-nums;}
 .intro{max-width:620px;margin:18px auto 0;text-align:center;color:var(--muted);font-size:14px;line-height:1.6;}
 #report{margin-top:24px;}
-.footer{text-align:center;font-size:12px;color:var(--hint);margin-top:40px;padding-top:18px;border-top:1px solid var(--border);}
+.footer{text-align:center;font-size:12px;color:var(--hint);margin-top:52px;padding-top:20px;border-top:1px solid var(--border);line-height:1.7;}
 """
 
 BADGE_SVG = ('<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" '

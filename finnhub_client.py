@@ -362,6 +362,9 @@ def get_info(ticker):
     rev = _f(info.get("totalRevenue"))
     if rev_per_emp and rev:
         info["fullTimeEmployees"] = int(round(rev / (rev_per_emp * 1e6)))
+    # Revenue generated per employee: a real efficiency signal, and a far more
+    # useful sixth tile than a CEO name.
+    info["revenuePerEmployee"] = rev_per_emp * 1e6 if rev_per_emp else None
 
     # ---- yfinance keys with no clean Finnhub equivalent: keep them as None
     # so renderer .get() calls all work and just show "—" in those spots.
