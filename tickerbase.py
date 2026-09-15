@@ -7,6 +7,7 @@ before buying, then renders it as a single plain-English HTML report.
 Data comes from Finnhub. Runs as a Cloudflare Worker; see entry.py.
 """
 
+import re
 import sys
 import os
 import io
@@ -522,6 +523,9 @@ body{margin:0;background:var(--bg);color:var(--ink);
   width:240px;max-width:78vw;line-height:1.5;z-index:50;transition:opacity .15s;box-shadow:0 6px 22px rgba(0,0,0,.28);
   pointer-events:none;}
 .tip .tt b{font-weight:700;}
+.tip .tt .ttl{display:block;font-size:13px;font-weight:700;color:var(--accent);
+  margin:0 0 8px;padding-bottom:7px;border-bottom:1px solid var(--border);
+  letter-spacing:.01em;}
 /* flip tooltip to the right edge for cards near the right side */
 .m:nth-child(3n) .tip .tt,.m:last-child .tip .tt{left:auto;right:0;}
 .tip:hover .tt,.tip.on .tt{visibility:visible;opacity:1;}
@@ -707,6 +711,14 @@ def metric(label, value, tiptext=None, status=None):
         tt = tiptext
     else:
         tt = tip(tiptext)
+    # Name the metric inside its own tooltip. On mobile the popup is a sheet at
+    # the bottom of the screen, far from the tile you tapped, so without this
+    # heading there is nothing telling you which term you are reading about.
+    if tt:
+        plain = re.sub(r"<[^>]+>", "", str(label)).strip()
+        if plain:
+            tt = tt.replace('<span class="tt">',
+                            f'<span class="tt"><b class="ttl">{esc(plain)}</b>', 1)
     return (f'<div class="m"><div class="ml">{label}{tt}</div>'
             f'<div class="mv">{value}</div>{pill}</div>')
 
