@@ -1,0 +1,21 @@
+{
+ "https://data.sec.gov/submissions/CIK0000104169.json": "CIK0000104169.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/RevenueFromContractWithCustomerExcludingAssessedTax.json": "archive_RevenueFromContractWithCustomerExcludingAssessedTax.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/Revenues.json": "archive_Revenues.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/SalesRevenueNet.json": "SalesRevenueNet.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/CostOfRevenue.json": "CostOfRevenue.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/GrossProfit.json": null,
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/SellingGeneralAndAdministrativeExpense.json": "SellingGeneralAndAdministrativeExpense.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/OperatingIncomeLoss.json": "OperatingIncomeLoss.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest.json": "IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/NetIncomeLoss.json": "NetIncomeLoss.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/NetCashProvidedByUsedInOperatingActivities.json": "NetCashProvidedByUsedInOperatingActivities.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/AccountsReceivableNetCurrent.json": null,
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/ReceivablesNetCurrent.json": "archive_ReceivablesNetCurrent.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/InventoryNet.json": "InventoryNet.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/ContractWithCustomerLiabilityCurrent.json": null,
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/DeferredRevenueCurrent.json": null,
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000104169/us-gaap/Assets.json": "Assets.json",
+ "https://www.sec.gov/Archives/edgar/data/104169/000010416926000055/FilingSummary.xml": "archive_FilingSummary.xml",
+ "https://www.sec.gov/Archives/edgar/data/104169/000010416926000055/R24.htm": "archive_R24.htm"
+}

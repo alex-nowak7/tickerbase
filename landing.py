@@ -7,6 +7,7 @@ box and the small bit of JavaScript that calls /analyze and injects the result.
 """
 
 import tickerbase as sl
+import audit_view
 
 # Extra styles just for the landing/search experience (report styles come from sl.CSS)
 EXTRA_CSS = """
@@ -51,6 +52,7 @@ EXTRA_CSS = """
 .sdisc{font-size:11.5px;color:var(--hint);text-align:center;margin:16px 0 0;line-height:1.6;}
 .intro{max-width:620px;margin:18px auto 0;text-align:center;color:var(--muted);font-size:14px;line-height:1.6;}
 #report{margin-top:24px;}
+#audit{margin-top:8px;}
 .footer{text-align:center;font-size:12px;color:var(--hint);margin-top:52px;padding-top:20px;border-top:1px solid var(--border);line-height:1.7;}
 """
 
@@ -64,7 +66,7 @@ LANDING_PAGE = f"""<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tickerbase, one-stop stock research</title>
-<style>{sl.CSS}{EXTRA_CSS}</style>
+<style>{sl.CSS}{EXTRA_CSS}{audit_view.AUDIT_CSS}</style>
 </head>
 <body>
 <div class="wrap">
@@ -100,9 +102,13 @@ LANDING_PAGE = f"""<!DOCTYPE html>
   and what analysts &amp; insiders are doing, then sums it up with a plain-English verdict. It's an educational
   research tool, not investment advice. Enter a ticker above to begin.</p>
 
+  <div class="viewsw" id="viewsw" hidden>
+    <button data-v="inv" class="on">Investor view</button><button data-v="audit">Audit View</button>
+  </div>
   <div id="report"></div>
+  <div id="audit" hidden></div>
 
-  <div class="footer">Educational use only · not investment advice · data from Finnhub and Twelve Data</div>
+  <div class="footer">Educational use only · not investment advice · data from Finnhub, Twelve Data and SEC EDGAR</div>
 </div>
 
 <script>
@@ -114,6 +120,10 @@ async function analyze(t){{
   if(!t){{ setStatus("Please enter a ticker symbol.", true); return; }}
   if(busy) return;
   busy = true;
+  curT = t; auditFor = "";
+  $("viewsw").hidden = true;
+  $("audit").hidden = true; $("audit").innerHTML = "";
+  $("report").hidden = false;
   $("goBtn").disabled = true;
   $("intro").style.display = "none";
   $("starters").style.display = "none";
@@ -126,6 +136,9 @@ async function analyze(t){{
       $("report").innerHTML = data.html;
       setStatus(data.partial ? "Loaded, a few optional fields were unavailable, the rest is shown below."
                              : (data.cached ? "" : ""));
+      $("viewsw").hidden = false;
+      setView(wantAudit ? "audit" : "inv");
+      wantAudit = false;
       // scroll the report into view on small screens
       $("report").scrollIntoView({{behavior:"smooth", block:"start"}});
     }} else {{
@@ -143,6 +156,54 @@ async function analyze(t){{
     $("goBtn").disabled = false;
   }}
 }}
+
+// ---- Audit View ------------------------------------------------------
+// The audit tab loads only when someone opens it. Numbers come first from
+// /audit; the AI summary follows from /audit/summary so the page never
+// waits on the AI.
+let curT = "", auditFor = "", wantAudit = false;
+
+function setView(v){{
+  const audit = v === "audit";
+  document.querySelectorAll("#viewsw button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
+  $("report").hidden = audit;
+  $("audit").hidden = !audit;
+  try {{
+    const u = new URL(location.href);
+    u.searchParams.set("t", curT);
+    if(audit) u.searchParams.set("v", "audit"); else u.searchParams.delete("v");
+    history.replaceState(null, "", u);
+  }} catch(e) {{}}
+  if(audit) loadAudit();
+}}
+
+async function loadAudit(){{
+  if(!curT || auditFor === curT) return;
+  const t = curT;
+  auditFor = t;
+  $("audit").innerHTML = `<div class="status"><span class="spin"></span>Loading SEC filings for ${{t}} …</div>`;
+  try {{
+    const res = await fetch("/audit?ticker=" + encodeURIComponent(t));
+    const data = await res.json();
+    if(t !== curT) return;
+    $("audit").innerHTML = data.html || `<div class="av-empty">Audit View is unavailable right now.</div>`;
+    const box = () => document.getElementById("audit-ai");
+    if(!data.has_summary){{ if(box()) box().innerHTML = `<p class="av-note">Summary unavailable.</p>`; return; }}
+    try {{
+      const r2 = await fetch("/audit/summary?ticker=" + encodeURIComponent(t));
+      const s = await r2.json();
+      if(t === curT && box()) box().innerHTML = s.html || `<p class="av-note">Summary unavailable.</p>`;
+    }} catch(e) {{
+      if(t === curT && box()) box().innerHTML = `<p class="av-note">Summary unavailable.</p>`;
+    }}
+  }} catch(e) {{
+    if(t !== curT) return;
+    auditFor = "";
+    $("audit").innerHTML = `<div class="av-empty">Couldn't load Audit View. Check your connection and try again.</div>`;
+  }}
+}}
+
+document.querySelectorAll("#viewsw button").forEach(b => b.onclick = () => setView(b.dataset.v));
 
 function setStatus(html, isErr){{
   const s = $("status");
@@ -221,8 +282,10 @@ document.addEventListener("touchmove", e => {{
 
 document.addEventListener("keydown", e => {{ if(e.key === "Escape") closeAll(); }});
 
-// allow deep links like /?t=AAPL
-const qs = new URLSearchParams(location.search).get("t");
+// allow deep links like /?t=AAPL or /?t=AAPL&v=audit
+const params = new URLSearchParams(location.search);
+const qs = params.get("t");
+wantAudit = params.get("v") === "audit";
 if(qs){{ $("ticker").value = qs.toUpperCase(); analyze(qs); }}
 </script>
 </body>

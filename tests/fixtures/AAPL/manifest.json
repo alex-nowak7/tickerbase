@@ -1,0 +1,21 @@
+{
+ "https://data.sec.gov/submissions/CIK0000320193.json": "CIK0000320193.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/RevenueFromContractWithCustomerExcludingAssessedTax.json": "archive_RevenueFromContractWithCustomerExcludingAssessedTax.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/Revenues.json": "archive_Revenues.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/SalesRevenueNet.json": "SalesRevenueNet.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/CostOfRevenue.json": null,
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/CostOfGoodsAndServicesSold.json": "CostOfGoodsAndServicesSold.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/GrossProfit.json": "GrossProfit.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/SellingGeneralAndAdministrativeExpense.json": "SellingGeneralAndAdministrativeExpense.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/OperatingIncomeLoss.json": "OperatingIncomeLoss.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest.json": "IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/NetIncomeLoss.json": "NetIncomeLoss.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/NetCashProvidedByUsedInOperatingActivities.json": "NetCashProvidedByUsedInOperatingActivities.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/AccountsReceivableNetCurrent.json": "AccountsReceivableNetCurrent.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/InventoryNet.json": "InventoryNet.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/ContractWithCustomerLiabilityCurrent.json": "ContractWithCustomerLiabilityCurrent.json",
+ "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/Assets.json": "Assets.json",
+ "https://www.sec.gov/Archives/edgar/data/320193/000032019326000026/FilingSummary.xml": "archive_FilingSummary.xml",
+ "https://www.sec.gov/Archives/edgar/data/320193/000032019326000026/R26.htm": "archive_R26.htm",
+ "https://www.sec.gov/Archives/edgar/data/320193/000032019326000026/R10.htm": "archive_R10.htm"
+}
