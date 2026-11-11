@@ -121,7 +121,12 @@ def build_messages(company, fiscal_year_end, policy_text, analysis):
         f"(not business or investment risks). linked_flag must be one of: {allowed}, or null, "
         f"and only when the risk is directly about that flag. "
         f"not_disclosed lists only the ASC 606 judgment areas named above that the filing text "
-        f"does not discuss. Return only the JSON object, with no other text."
+        f"does not discuss. "
+        f"Style: write like a business student explaining this to a classmate. Use clear, direct "
+        f"sentences. When you are giving an actual reason, you can use 'This means' or 'This is because'. "
+        f"Use parentheses for short clarifications. Avoid stiff phrases like 'leading to "
+        f"misstatement' or 'may be inaccurate'; say plainly what could go wrong and why. "
+        f"Return only the JSON object, with no other text."
     )
     return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user}]
 

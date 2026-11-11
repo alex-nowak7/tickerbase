@@ -118,10 +118,10 @@ def _num(kind, v):
 
 
 ASSERTION_TIP = sl.tip2(
-    "Assertions are the claims built into every number in the financial statements: that it exists, "
+    "Assertions are the claims behind every number on the financial statements: that it exists, "
     "is complete, is accurate, is recorded in the right period (cutoff), and is valued correctly.",
-    "Auditors design their tests around the assertion most likely to be wrong. "
-    "Each flag here names the one at risk.")
+    "Auditors plan their testing around the assertion most likely to be wrong. "
+    "This is why each flag here names the assertion at risk.")
 
 
 # ------------------------------------------------------------------ pieces
@@ -139,10 +139,9 @@ def render_materiality(m):
     else:
         tiles = "".join([
             sl.metric("Planning materiality", esc(money(m["amount"])),
-                      sl.tip2("The size of a mistake that would change a reader's decision about the "
-                              "financial statements.",
-                              "Differences smaller than this are usually not worth chasing; "
-                              "balances and swings bigger than this get attention.")),
+                      sl.tip2("The size of a mistake that would change someone's decision about the company.",
+                              "This means differences smaller than this are usually not worth chasing, "
+                              "while bigger ones get a closer look.")),
             sl.metric("Benchmark", esc(m["benchmark_label"])),
             sl.metric("Benchmark value", esc(money(m["benchmark_value"]))),
         ])
@@ -173,9 +172,11 @@ def render_red_flags(flags):
             + f'<p class="a">Assertion at risk: {esc(r["assertion"])} · Threshold: {esc(r["threshold"])}</p></div>')
     n = sum(r["status"] == "flag" for r in flags)
     grade = ("rd", f"{n} flag{'s' if n != 1 else ''}") if n else ("g", "No flags")
-    intro = f'<p class="av-note" style="margin:0 0 6px">Six ratio tests on revenue and earnings quality, latest year vs prior year. What\'s an assertion? {ASSERTION_TIP}</p>'
+    intro = (f'<p class="av-note" style="margin:0 0 6px">Six tests comparing this year to last year. '
+             f'A flag doesn\'t mean something is wrong. It means it is worth asking about. '
+             f'What is an assertion? {ASSERTION_TIP}</p>')
     return sl.section("av-flags", "risk", "Red-flag tests",
-                      "Where revenue and earnings misstatements tend to hide", grade,
+                      "Do related numbers move together?", grade,
                       intro + "".join(rows), open_default=True)
 
 
@@ -202,43 +203,44 @@ def render_fluctuations(rows, fy_ends, materiality_amount):
     n = sum(r["flag"] for r in rows)
     grade = ("a", f"{n} flagged") if n else ("g", "None flagged")
     mat = money(materiality_amount) if materiality_amount else "materiality"
-    intro = (f'<p class="av-note" style="margin:0 0 10px">A row is flagged when it moved by at least '
-             f'{esc(mat)} (materiality) <b>and</b> at least 10%. Auditors ask management to explain moves like these.</p>')
+    intro = (f'<p class="av-note" style="margin:0 0 10px">A line item is flagged when it moved by at least '
+             f'{esc(mat)} (materiality) <b>and</b> at least 10%. On a real audit, these are the changes '
+             f'you would ask management to explain.</p>')
     table = f'<div class="av-scroll"><table class="av-table"><thead>{head}</thead><tbody>{"".join(body)}</tbody></table></div>'
     why_html = f'<ul class="av-why">{"".join(whys)}</ul>' if whys else ""
     return sl.section("av-flux", "growth", "Fluctuation analysis",
-                      "Three years side by side, big moves highlighted", grade,
+                      "Three years side by side", grade,
                       intro + table + why_html, open_default=True)
 
 
 def render_ai_placeholder():
     body = ('<div id="audit-ai" class="av-ai"><p class="av-note"><span class="spin"></span>'
-            'Reading the revenue recognition policy in the latest 10-K. This can take 20 seconds the first time.</p></div>')
+            'Reading the revenue recognition policy from the latest 10-K. The first load takes about 20 seconds.</p></div>')
     return sl.section("av-ai", "summary", "Revenue recognition (ASC 606)",
                       "What the company says about how it books revenue", None, body, open_default=True)
 
 
 HOW_IT_WORKS = [
-    "We pull three years of annual figures from the company's 10-K filings in SEC EDGAR, using the XBRL tags attached to each number.",
-    "Materiality is set at 5% of pre-tax income (0.5% of revenue if profit is small or negative). It decides how big a difference has to be to matter.",
-    "Fluctuation analysis flags any line that moved by at least materiality and at least 10% from the year before. Auditors ask for an explanation of each one.",
-    "Six red-flag tests compare related numbers, such as receivables against sales and profit against cash. Each one names the assertion most at risk.",
-    "An AI model reads the company's own revenue recognition policy and lists the ASC 606 judgment areas. Its quotes are checked against the filing text.",
+    "First, I pull the last three years of financial data from the company's 10-K filings on SEC EDGAR.",
+    "Next, I set materiality at 5% of pre-tax income (or 0.5% of revenue if profit is small or negative). This means a mistake smaller than this number is unlikely to change anyone's view of the company.",
+    "Then, any line item that moved by at least materiality and at least 10% gets flagged. These are the changes an auditor would ask management to explain.",
+    "I also run six red-flag tests that compare numbers that should move together, such as receivables and sales, or profit and cash.",
+    "Finally, an AI model reads the company's revenue recognition policy and pulls out the ASC 606 judgment areas. I check every quote against the actual filing and remove any that don't match.",
 ]
 
 
 def render_how_it_works():
     items = "".join(f"<li>{esc(x)}</li>" for x in HOW_IT_WORKS)
-    body = (f'<div class="av-how"><ol>{items}</ol><p class="av-note">This is a simplified, educational '
-            f'version of audit planning analytics. It is not an audit and not an audit opinion.</p></div>')
-    return sl.section("av-how", "primer", "How this works", "The method in five lines", None, body,
+    body = (f'<div class="av-how"><ol>{items}</ol><p class="av-note">Overall, this is a simplified version '
+            f'of audit planning that I built to learn how auditors think. It is not an audit.</p></div>')
+    return sl.section("av-how", "primer", "How this works", "The process behind the numbers", None, body,
                       open_default=True)
 
 
 # ------------------------------------------------------------------ whole tab
-NO_XBRL_MESSAGE = ("Audit View needs annual 10-K filings with XBRL data from the SEC. "
-                   "This company doesn't have them (foreign companies file a 20-F instead, and "
-                   "brand-new listings may not have filed a 10-K yet).")
+NO_XBRL_MESSAGE = ("Audit View needs a 10-K filed with the SEC, and this company doesn't have one. "
+                   "This is usually because it is a foreign company (which files a 20-F instead) "
+                   "or a new IPO that hasn't filed yet.")
 
 
 def render_message(msg):
@@ -249,8 +251,8 @@ def render_audit_view(ticker, out):
     """Full tab HTML from audit_analytics.analyze() output."""
     if not out.get("ok"):
         return render_message(NO_XBRL_MESSAGE)
-    banner = ('<div class="av-banner">Limited support for banks and insurers: their statements are built '
-              'differently, so some tests don\'t apply.</div>') if out.get("limited_support") else ""
+    banner = ('<div class="av-banner">Limited support for banks and insurers. Their financial statements '
+              'are built differently, so some of these tests don\'t apply.</div>') if out.get("limited_support") else ""
     return (render_header(out, ticker) + banner
             + render_materiality(out["materiality"])
             + render_red_flags(out["red_flags"])
@@ -273,12 +275,12 @@ def render_summary(payload):
             q = f'<span class="q">“{esc(a["evidence"])}”</span>' if a.get("evidence") else ""
             parts.append(f'<div class="item"><b>{esc(a["area"])}.</b> {esc(a["plain_english"])}{q}</div>')
     if s.get("top_audit_risks"):
-        parts.append("<h4>Where the audit risk is</h4>")
+        parts.append("<h4>Where I would focus</h4>")
         for r in s["top_audit_risks"]:
             link = f'<span class="link">{esc(r["linked_flag"])}</span>' if r.get("linked_flag") else ""
             parts.append(f'<div class="item"><b>{esc(r["risk"])}</b>{link}<br>{esc(r["why"])}</div>')
     if s.get("not_disclosed"):
-        parts.append("<h4>Not covered in the text we read</h4>")
+        parts.append("<h4>Not mentioned in the policy</h4>")
         parts.append(f'<p class="item">{esc(", ".join(s["not_disclosed"]))}</p>')
     acc = payload.get("accession") or ""
     parts.append(f'<p class="av-note">Source: 10-K accession {esc(acc)} ({esc(payload.get("source") or "")}).</p>')

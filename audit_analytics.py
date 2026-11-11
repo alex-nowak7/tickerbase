@@ -111,29 +111,29 @@ def materiality(ds):
 # One hand-written note per line item: why an auditor would care if it moved a
 # lot, and the assertion (the claim in the financial statements) most at risk.
 FLUX_NOTES = {
-    "revenue": ("Revenue is the most common place for misstatement. A big swing needs a clear business reason.",
+    "revenue": ("Revenue is the most common place for misstatements, so a big change needs a clear business reason.",
                 "Existence"),
-    "cost_of_revenue": ("Costs should move with sales. A different pattern can mean costs recorded in the wrong period.",
+    "cost_of_revenue": ("Costs should move with sales. If they don't, some costs may have been recorded in the wrong year.",
                         "Completeness"),
-    "gross_profit": ("A change in gross profit points to pricing, product mix, or how costs were recorded.",
+    "gross_profit": ("A change here usually comes from pricing, product mix, or how costs were recorded.",
                      "Accuracy"),
-    "sga": ("Unusual swings in overhead can mean unrecorded or misclassified expenses.",
+    "sga": ("Large swings in overhead could mean expenses were missed or classified incorrectly.",
             "Completeness"),
-    "operating_income": ("Operating income sums up the swings above. The team needs to know what drove it.",
+    "operating_income": ("This combines the changes above, so it is important to understand what drove it.",
                          "Accuracy"),
-    "pretax_income": ("Pre-tax income is the materiality base, so a big change also changes how much testing is needed.",
+    "pretax_income": ("This is the materiality benchmark, so a big change here also changes how much testing is needed.",
                       "Accuracy"),
-    "net_income": ("Large swings often come from one-off items that need support.",
+    "net_income": ("Large swings often come from one-time items, which need documentation to back them up.",
                    "Accuracy"),
-    "operating_cash_flow": ("Cash flow moving differently from profit is an earnings-quality signal.",
+    "operating_cash_flow": ("When cash flow moves differently than profit, it raises questions about earnings quality.",
                             "Accuracy"),
-    "accounts_receivable": ("Growing receivables can mean sales that never happened or customers who won't pay.",
+    "accounts_receivable": ("Fast-growing receivables could mean sales that didn't really happen or customers who won't pay.",
                             "Existence"),
-    "inventory": ("An inventory build-up can hide slow-moving or obsolete stock that should be written down.",
+    "inventory": ("A build-up of inventory could hide products that won't sell and should be written down.",
                   "Valuation"),
-    "deferred_revenue": ("Deferred revenue shows cash received before it is earned. Big moves can mean revenue recognized too early or too late.",
+    "deferred_revenue": ("This is cash collected before the work is done. Big changes could mean revenue is being recorded in the wrong year.",
                          "Cutoff"),
-    "total_assets": ("Big balance sheet moves usually come from acquisitions, disposals, or write-downs that need support.",
+    "total_assets": ("Large balance sheet changes usually come from acquisitions or write-downs, which need documentation.",
                      "Valuation"),
 }
 
@@ -213,7 +213,7 @@ def test_inventory_vs_cost(ds):
     if all(v is None for v in inv):
         return _result("F3b", "Inventory growing faster than cost of sales", NO_DATA,
                        {}, f"Flag if inventory growth minus cost of revenue growth > {INVENTORY_GAP_PTS:g} points",
-                       "The company reports no inventory.", "Valuation",
+                       "The company doesn't report inventory.", "Valuation",
                        "Inventory may be slow-moving or obsolete.")
     g_inv, g_cor = growth(inv[0], inv[1]), growth(cor[0], cor[1])
     dio = [ratio(i, c) * DAYS_IN_YEAR if ratio(i, c) is not None else None
@@ -271,9 +271,9 @@ def test_profit_vs_cash(ds):
     else:
         acc = (ni[0] - ocf[0]) / avg_assets
         status = FLAG if acc > ACCRUALS_TO_ASSETS else OK
-        note = (f"Profit exceeded operating cash flow by {acc*100:.1f}% of assets." if status == FLAG else
-                ("Operating cash flow was higher than profit." if acc <= 0 else
-                 f"Profit was mostly backed by cash (gap {acc*100:.1f}% of assets)."))
+        note = (f"Profit beat operating cash flow by {acc*100:.1f}% of assets." if status == FLAG else
+                ("Operating cash flow was higher than profit, which is a good sign." if acc <= 0 else
+                 f"Profit was mostly backed by cash (gap of {acc*100:.1f}% of assets)."))
     numbers["accruals_to_assets_pct"] = _pts(acc)
     return _result("F3d", "Profit not backed by cash", status, numbers,
                    f"Flag if (net income - operating cash flow) / average total assets > {ACCRUALS_TO_ASSETS*100:g}%",
@@ -288,7 +288,7 @@ def test_deferred_revenue_direction(ds):
     if all(v is None for v in dr):
         return _result("F3e", "Deferred revenue moving the wrong way", NO_DATA, {},
                        f"Flag if revenue up > {DEFREV_REVENUE_UP*100:g}% while deferred revenue down > {DEFREV_DOWN*100:g}%",
-                       "The company reports no deferred revenue, so this test is skipped.",
+                       "The company doesn't report deferred revenue, so this test is skipped.",
                        "Cutoff", "Revenue may be getting pulled forward.")
     g_rev, g_dr = growth(rev[0], rev[1]), growth(dr[0], dr[1])
     numbers = {"revenue_growth_pct": _pts(g_rev), "deferred_revenue_growth_pct": _pts(g_dr)}
@@ -318,9 +318,11 @@ def test_prior_year_changes(ds):
     elif changes:
         status = FLAG
         items = sorted({c.get("label") for c in changes})
-        note = f"{len(changes)} prior-year figure(s) changed between filings: {', '.join(items)}."
+        n = len(changes)
+        note = (f"{n} prior-year number{'s' if n != 1 else ''} changed in a later filing: "
+                f"{', '.join(items)}.")
     else:
-        status, note = OK, "Prior-year figures match across filings."
+        status, note = OK, "Prior-year numbers haven't changed between filings."
     return _result("F3f", "Prior-year numbers changed", status, numbers,
                    "Flag if a prior-year figure differs by more than 1% between filings",
                    note, "Accuracy, presentation",

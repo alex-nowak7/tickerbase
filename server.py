@@ -156,7 +156,7 @@ async def analyze(request: Request, ticker: str = "", fresh: int = 0):
 # changes (tags, alignment); bump AUDIT_AI_VERSION only when the AI prompt or
 # model changes, since AI summaries cost neurons to regenerate.
 AUDIT_DATA_VERSION = "v3"
-AUDIT_AI_VERSION = "v1"
+AUDIT_AI_VERSION = "v2"   # v2: summaries written in Alex's voice
 AUDIT_DATA_TTL = 24 * 60 * 60   # SEC data changes at most a few times a year
 
 

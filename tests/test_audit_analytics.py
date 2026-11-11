@@ -110,7 +110,7 @@ def test_f3b_flags_inventory_build():
 
 def test_f3b_no_inventory():
     r = aa.test_inventory_vs_cost(ds_with(inventory=[None, None, None]))
-    assert r["status"] == aa.NO_DATA and "no inventory" in r["note"]
+    assert r["status"] == aa.NO_DATA and "doesn't report inventory" in r["note"]
 
 
 # ------------------------------------------------------------------ F3-c gross margin
