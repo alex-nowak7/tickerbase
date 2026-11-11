@@ -273,10 +273,22 @@ All are large US filers, so their 10-Ks include Critical Audit Matters. If one b
 
 **Validation table.** For each test ticker, open the latest 10-K, find the auditor's report, and read the Critical Audit Matters:
 
-| Ticker | Auditor's CAMs | Our top flags | Overlap? (Y / N / Partial) | Notes |
-|---|---|---|---|---|
-| AAPL | | | | |
-| ... | | | | |
+**How to fill it in:** click the 10-K link, press Ctrl+F and search **"Critical Audit Matter"**. That lands you in the auditor's report (titled "Report of Independent Registered Public Accounting Firm"). Each CAM has a short title, like "Revenue recognition for products and services". Write the titles in the CAMs column, then compare them to our flags. "Our top flags" is pre-filled from the live site (F2 = how many line items had big moves).
+
+| Ticker | Latest 10-K | Auditor's CAMs | Our top flags | Overlap? (Y / N / Partial) | Notes |
+|---|---|---|---|---|---|
+| AAPL | [FY2026 10-K](https://www.sec.gov/Archives/edgar/data/320193/000032019326000026/aapl-20260926.htm) | | F3b Inventory vs cost of sales (+9 F2 moves) | | |
+| MSFT | [FY2026 10-K](https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/msft-20260630.htm) | | F3b Inventory vs cost of sales (+10 F2 moves) | | |
+| CRM | [FY2026 10-K](https://www.sec.gov/Archives/edgar/data/1108524/000110852426000060/crm-20260131.htm) | | F3a Receivables vs revenue (+7 F2 moves) | | |
+| NFLX | [FY2025 10-K](https://www.sec.gov/Archives/edgar/data/1065280/000106528026000034/nflx-20251231.htm) | | F3c Gross margin swing (+7 F2 moves) | | |
+| WMT | [FY2026 10-K](https://www.sec.gov/Archives/edgar/data/104169/000010416926000055/wmt-20260131.htm) | | No F3 flags (+3 F2 moves) | | |
+| TGT | [FY2026 10-K](https://www.sec.gov/Archives/edgar/data/27419/000002741926000016/tgt-20260131.htm) | | No F3 flags (+1 F2 move) | | |
+| CAT | [FY2025 10-K](https://www.sec.gov/Archives/edgar/data/18230/000001823026000008/cat-20251231.htm) | | F3a Receivables vs revenue; F3c Gross margin swing (+7 F2 moves) | | |
+| DE | [FY2025 10-K](https://www.sec.gov/Archives/edgar/data/315189/000110465925122321/de-20251102x10k.htm) | | No F3 flags; 4 tests lack data (+4 F2 moves) | | |
+| PFE | [FY2025 10-K](https://www.sec.gov/Archives/edgar/data/78003/000007800326000026/pfe-20251231.htm) | | F3c Gross margin swing; F3f Prior-year numbers changed (+1 F2 move) | | |
+| BA | [FY2025 10-K](https://www.sec.gov/Archives/edgar/data/12927/000162828026004357/ba-20251231.htm) | | F3c Gross margin swing (+8 F2 moves) | | |
+
+**Overlap: _ of 10.**
 
 Note: many CAMs cover goodwill, taxes, or reserves, which this tool doesn't test. A low overlap number is fine. Report it honestly.
 

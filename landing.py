@@ -73,7 +73,6 @@ LANDING_PAGE = f"""<!DOCTYPE html>
   <div class="hero" id="hero">
     <div class="badge">{BADGE_SVG}</div>
     <h1>Tickerbase</h1>
-    <p class="tk">Type a ticker. See everything a serious investor weighs before buying, in plain English.</p>
   </div>
 
   <div class="search">
